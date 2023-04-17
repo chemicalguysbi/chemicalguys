@@ -1,25 +1,21 @@
 
 version: 2
 
-sources:
-  - name: oracle_fusion_fscm
-    database: cg-gbq-p
-    schema: cg-gbq-p.oracle_fusion_fscm_dootop
-    tables:
-      - name: fulfill_line
+models:
+    - name: my_first_dbt_model
+      description: "A starter dbt model"
+      columns:
+          - name: id
+            description: "The primary key for this table"
+            tests:
+                - unique
+                - not_null
 
-  - name: oracle_fusion_fine_extract
-    database: cg-gbq-p
-    schema: oracle_fusion_fscm_finextract_arbiccextract
-    tables:
-      - name: payment_schedule_extract_pvo
-      - name: transaction_header_extract_pvo
-      - name: transaction_line_extract_pvo
-
-  - name: oracle_fusion_fine_extract
-    database: cg-gbq-p
-    schema: legal_entity_extract_pvo
-    tables:
-      - name: payment_schedule_extract_pvo
-      - name: transaction_header_extract_pvo
-      - name: transaction_line_extract_pvo
+    - name: my_second_dbt_model
+      description: "A starter dbt model"
+      columns:
+          - name: id
+            description: "The primary key for this table"
+            tests:
+                - unique
+                - not_null
