@@ -13,12 +13,14 @@ with source_data as (
 
     SELECT coverage_fline_details_doc_system_ref_id,			
 doc_references_drop_ship_doc_system_ref_id,			
-document_references_doc_id FROM {{source('oracle_fusion_fscm','fulfill_line')}} 
+document_references_doc_id FROM 
+cg-gbq-p.oracle_fusion_fscm_dootop.fulfill_line
+--{{source('oracle_fusion_fscm','fulfill_line')}} 
 
 
 )
 
-select *
+select *,current_datetime() as load_date_time
 from source_data
 
 /*
