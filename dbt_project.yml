@@ -34,5 +34,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   oracle_fusion_fscm_dootop:
     # Applies to all files under models/example/
-    example:
-      materialized: table
+      +materialized: table
+      enterprise_zone:
+        +materialized: view
+        +schema:  enterprise_zone
