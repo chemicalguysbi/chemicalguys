@@ -38,3 +38,9 @@ models:
       enterprise_zone:
         +materialized: view
         +schema:  enterprise_zone
+      test_zone:
+        +materialized: table
+        +schema:  test_zone
+      consumption_zone:
+        +materialized: view
+        +schema:  consumption_zone
