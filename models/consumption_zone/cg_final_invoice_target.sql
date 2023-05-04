@@ -4,8 +4,7 @@
         unique_key='s_key'
     )
 }}
-
---incremental records for cg_invoice_fact table where it takes data from last 3 days
+--delta load cg_final_invoice_target kept filters in underlying cte which goes as "only taking last 3 days data"
 
 WITH
   invo_trans_hdr AS (
@@ -304,7 +303,7 @@ WITH
     ra_customer_trx_line_program_id,
     ra_customer_trx_line_program_update_date,
     ra_customer_trx_line_quantity_credited,
-    ra_customer_trx_line_quantity_invoiced,
+    ra_customer_trx_line_quantity_invoiced AS QUANTITY,
     ra_customer_trx_line_quantity_ordered,
     ra_customer_trx_line_ra_customer_trx_line_unit_selling_price,
     ra_customer_trx_line_reason_code,
@@ -429,7 +428,24 @@ WITH
     load_datetime
   FROM
     `cg-gbq-p.staging_zone.invoice_legal_entity`),
-  incremental_header AS (
+  standard_cost AS (
+  SELECT
+    organization_id,
+    inventory_item_id AS inventory_itemid,
+    organiztion_code,
+    cst_org_name,
+    effective_start_date,
+    effective_end_date,
+    std_cost
+  FROM
+    `cg-gbq-p.consumption_zone.cg_item_standard_cost` --
+  WHERE
+    EFFECTIVE_START_DATE<=current_date
+    AND EFFECTIVE_END_DATE>=current_date ),
+	
+
+
+incremental_header AS (
   SELECT
     *
   FROM
@@ -469,7 +485,8 @@ SELECT
   FROM
     inv_leg_enti ile))	,
 	
-	join_cte AS (
+
+  join_cte AS (
   SELECT
     *
   FROM
@@ -486,54 +503,73 @@ SELECT
     increment_inv_leg ile
   ON
     ith.LEGAL_ENTITY_ID = ile.LEGAL_ENTITY_ID
+  RIGHT JOIN
+    standard_cost sc
+  ON
+    itl.ra_customer_trx_line_warehouse_id = sc.organization_id
+    AND sc.inventory_itemid = itl.INVENTORY_ITEM_ID
   WHERE
-    UPPER(ith.TRX_CLASS)='INV' )
-    
-    
-    --select count(*) from validateion
-    
-    ,
-
-final_cte as (
+    UPPER(ith.TRX_CLASS)='INV'),
+  --112996408 
+  aggregated_data AS (
+  SELECT
+    DISTINCT join_cte.ACCOUNT_NAME,
+    join_cte.CUST_ACCOUNT_ID,
+    join_cte.complete_flag,
+    join_cte.SOURCE_ORDER_NUMBER,
+    join_cte.ORDER_NUMBER,
+    join_cte.INVOICE_CURRENCY_CODE,
+    join_cte.PURCHASE_ORDER,
+    join_cte.trx_class,
+    join_cte.inv_date,
+    join_cte.inv_number,
+    join_cte.inventory_itemid,
+    join_cte.STD_COST * join_cte.QUANTITY AS standard_cost,
+    join_cte.QUANTITY,
+    join_cte.ra_customer_trx_line_extended_amount,
+    join_cte.ra_customer_trx_billing_date
+  FROM
+    join_cte ),
+  cg_final_invoice_target AS (
+  SELECT
+    SUM(aggregated_data.ra_customer_trx_line_extended_amount ) AS inv_total,
+    MAX(aggregated_data.ra_customer_trx_billing_date )inv_due,
+    aggregated_data.inventory_itemid,
+    aggregated_data.ACCOUNT_NAME,
+    aggregated_data.CUST_ACCOUNT_ID,
+    aggregated_data.complete_flag,
+    aggregated_data.SOURCE_ORDER_NUMBER,
+    aggregated_data.ORDER_NUMBER,
+    aggregated_data.INVOICE_CURRENCY_CODE,
+    COALESCE(aggregated_data.PURCHASE_ORDER,'0') AS PURCHASE_ORDER,
+    aggregated_data.trx_class,
+    aggregated_data.inv_date,
+    aggregated_data.inv_number,
+    SUM(aggregated_data.standard_cost)standard_cost,
+    SUM(aggregated_data.QUANTITY)QUANTITY
+  FROM
+    aggregated_data
+  GROUP BY
+    aggregated_data.ACCOUNT_NAME,
+    aggregated_data.CUST_ACCOUNT_ID,
+    aggregated_data.complete_flag,
+    aggregated_data.SOURCE_ORDER_NUMBER,
+    aggregated_data.ORDER_NUMBER,
+    aggregated_data.INVOICE_CURRENCY_CODE,
+    aggregated_data.PURCHASE_ORDER,
+    aggregated_data.trx_class,
+    aggregated_data.inv_date,
+    aggregated_data.inv_number,
+    aggregated_data.inventory_itemid --,
+    --aggregated_data.standard_cost,
+    --aggregated_data.QUANTITY
+  ORDER BY
+    aggregated_data.INV_DATE,
+    aggregated_data.ACCOUNT_NAME,
+    aggregated_data.INV_NUMBER ASC ) --data 5161270
 SELECT
-  SUM(join_cte.ra_customer_trx_line_extended_amount ) AS inv_total
-  ,
-  MAX(join_cte.ra_customer_trx_creation_date )inv_due
-  ,
-  join_cte.ACCOUNT_NAME,
-  join_cte.CUST_ACCOUNT_ID,
-  join_cte.complete_flag,
-  join_cte.SOURCE_ORDER_NUMBER,
-  join_cte.ORDER_NUMBER,
-  join_cte.INVOICE_CURRENCY_CODE,
-  COALESCE(join_cte.PURCHASE_ORDER,'0') as PURCHASE_ORDER,
-  join_cte.trx_class,
-  join_cte.inv_date,
-  join_cte.inv_number,
-  COALESCE(join_cte.inventory_item_id,0)inventory_item_id,
-  0 as open_balance
+  MD5(ACCOUNT_NAME ||CUST_ACCOUNT_ID ||complete_flag||SOURCE_ORDER_NUMBER||ORDER_NUMBER||INVOICE_CURRENCY_CODE||PURCHASE_ORDER|| trx_class ||inv_date||inv_number|| inventory_itemid)s_key,
+  *,
+  current_datetime AS load_datetime
 FROM
-  join_cte
-
-GROUP BY
- join_cte.ACCOUNT_NAME,
- join_cte.CUST_ACCOUNT_ID,
- join_cte.complete_flag,
- join_cte.SOURCE_ORDER_NUMBER,
- join_cte.ORDER_NUMBER,
- join_cte.INVOICE_CURRENCY_CODE,
- join_cte.PURCHASE_ORDER,
- join_cte.trx_class,
- join_cte.inv_date,
- join_cte.inv_number,
- join_cte.inventory_item_id,
- open_balance
-ORDER BY
-  join_cte.INV_DATE,
-  join_cte.ACCOUNT_NAME,
-  join_cte.INV_NUMBER ASC
-  )
-select 
-md5(ACCOUNT_NAME ||CUST_ACCOUNT_ID ||complete_flag||SOURCE_ORDER_NUMBER||ORDER_NUMBER||INVOICE_CURRENCY_CODE||PURCHASE_ORDER||
- trx_class ||inv_date||inv_number|| inventory_item_id ||open_balance)s_key,
- * ,current_datetime as load_datetime from final_cte
+  cg_final_invoice_target
