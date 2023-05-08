@@ -1,0 +1,39 @@
+
+version: 2
+
+models:
+    - name: cg_invoice_final_fact
+      #description: "A starter dbt model"
+      columns:
+          - name: s_key
+            description: "The primary key for this table"
+            tests:
+                - unique
+                - not_null
+
+    - name: cg_sales_orders_inc_fact
+      #description: "A starter dbt model"
+      columns:
+            - name: s_key
+              description: "The primary key for this table"
+              tests:
+                  - unique
+                  - not_null
+    
+    - name: cg_invoice_target_cost
+      #description: "A starter dbt model"
+      columns:
+            - name: s_key
+              description: "The primary key for this table"
+              tests:
+                  - unique
+                  - not_null
+    
+    - name: cg_planning_fact
+      #description: "A starter dbt model"
+      columns:
+            - name: s_key
+              description: "The primary key for this table"
+              tests:
+                  - unique
+                  - not_null

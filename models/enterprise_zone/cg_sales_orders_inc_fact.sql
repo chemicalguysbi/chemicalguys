@@ -1,7 +1,9 @@
+	
 {{
     config(
         materialized='incremental',
-        tags = 'cg_sales_orders_final_fact'
+        unique_key = 's_key',
+        tags = 'cg_sales_orders_inc_fact'
     )
 }}
 --CG_DOO_FULFILL_LINES_ALL
@@ -272,6 +274,70 @@ order_number,
 item_number
 )
 --56061
-select * from aggregrate_cte 
+select md5(concat(order_date,
+fulfill_line_number,
+fulfill_org_id,
+fulfill_line_id,
+ordered_qty_ea,
+ship_to_party_site_id,
+source_line_number,
+line_status,  
+ea_price,
+customer_po_number,
+open_flag,
+order_number,
+ordered_date,
+source_order_number,
+source_revision_number,
+status_code,
+organization_code,
+inventory_item_id,
+item_number,
+description,
+party_site_id,
+site_use_type,
+address_1,
+address_2,
+city,
+country,
+postal_code,
+state,
+cust_acct_id,
+account_name,
+request_ship_date)) as s_key,
+order_date,
+fulfill_line_number,
+fulfill_org_id,
+fulfill_line_id,
+ordered_qty_ea,
+ship_to_party_site_id,
+source_line_number,
+line_status,  
+ea_price,
+customer_po_number,
+open_flag,
+order_number,
+ordered_date,
+source_order_number,
+source_revision_number,
+status_code,
+organization_code,
+inventory_item_id,
+item_number,
+description,
+party_site_id,
+site_use_type,
+address_1,
+address_2,
+city,
+country,
+postal_code,
+state,
+cust_acct_id,
+account_name,
+request_ship_date,
+extended_amount,
+current_datetime() as load_date_time
+from aggregrate_cte 
 -- where order_number = '1063224'
 -- and item_number = 'ACC_326'

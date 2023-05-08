@@ -1,15 +1,16 @@
 {{
     config(
         materialized='incremental',
-        unique_key='s_key'
+        unique_key='s_key',
+        tags = 'cg_invoice_target_cost'
     )
 }}
 --delta load cg_final_invoice_target kept filters in underlying cte which goes as "only taking last 3 days data"
 
-WITH
-  invo_trans_hdr AS (
-  SELECT
-    ra_customer_trx_customer_trx_id AS customer_trx_id,
+with
+  invo_trans_hdr as (
+  select
+    ra_customer_trx_customer_trx_id as customer_trx_id,
     _fivetran_synced,
     ra_customer_trx_address_verification_code,
     ra_customer_trx_agreement_id,
@@ -22,7 +23,7 @@ WITH
     ra_customer_trx_bill_template_name,
     ra_customer_trx_bill_to_address_id,
     ra_customer_trx_bill_to_contact_id,
-    ra_customer_trx_bill_to_customer_id AS bill_to_customer_id,
+    ra_customer_trx_bill_to_customer_id as bill_to_customer_id,
     ra_customer_trx_bill_to_site_use_id,
     ra_customer_trx_billing_date,
     ra_customer_trx_billing_ext_request_id,
@@ -33,7 +34,7 @@ WITH
     ra_customer_trx_cc_error_flag,
     ra_customer_trx_cc_error_text,
     ra_customer_trx_comments,
-    ra_customer_trx_complete_flag AS complete_flag,
+    ra_customer_trx_complete_flag as complete_flag,
     ra_customer_trx_control_completion_reason_code,
     ra_customer_trx_created_by,
     ra_customer_trx_created_from,
@@ -69,7 +70,7 @@ WITH
     ra_customer_trx_initial_customer_trx_id,
     ra_customer_trx_intercompany_flag,
     ra_customer_trx_interest_header_id,
-    ra_customer_trx_interface_header_attribute_1 AS SOURCE_ORDER_NUMBER,
+    ra_customer_trx_interface_header_attribute_1 as source_order_number,
     ra_customer_trx_interface_header_attribute_10,
     ra_customer_trx_interface_header_attribute_11,
     ra_customer_trx_interface_header_attribute_12,
@@ -77,7 +78,7 @@ WITH
     ra_customer_trx_interface_header_attribute_14,
     ra_customer_trx_interface_header_attribute_15,
     ra_customer_trx_interface_header_attribute_2,
-    ra_customer_trx_interface_header_attribute_3 AS ORDER_NUMBER,
+    ra_customer_trx_interface_header_attribute_3 as order_number,
     ra_customer_trx_interface_header_attribute_4,
     ra_customer_trx_interface_header_attribute_5,
     ra_customer_trx_interface_header_attribute_6,
@@ -86,14 +87,14 @@ WITH
     ra_customer_trx_interface_header_attribute_9,
     ra_customer_trx_interface_header_context,
     ra_customer_trx_internal_notes,
-    ra_customer_trx_invoice_currency_code AS INVOICE_CURRENCY_CODE,
+    ra_customer_trx_invoice_currency_code as invoice_currency_code,
     ra_customer_trx_invoicing_rule_id,
     ra_customer_trx_last_printed_sequence_num,
-    ra_customer_trx_last_update_date AS LAST_UPDATE_DATE,
+    ra_customer_trx_last_update_date as last_update_date,
     ra_customer_trx_last_update_login,
     ra_customer_trx_last_updated_by,
     ra_customer_trx_late_charges_assessed,
-    ra_customer_trx_legal_entity_id AS LEGAL_ENTITY_ID,
+    ra_customer_trx_legal_entity_id as legal_entity_id,
     ra_customer_trx_object_version_number,
     ra_customer_trx_old_trx_number,
     ra_customer_trx_org_id,
@@ -117,7 +118,7 @@ WITH
     ra_customer_trx_program_application_id,
     ra_customer_trx_program_id,
     ra_customer_trx_program_update_date,
-    ra_customer_trx_purchase_order AS PURCHASE_ORDER,
+    ra_customer_trx_purchase_order as purchase_order,
     ra_customer_trx_purchase_order_date,
     ra_customer_trx_purchase_order_revision,
     ra_customer_trx_ra_customer_trx_bill_plan_id,
@@ -164,20 +165,20 @@ WITH
     ra_customer_trx_territory_id,
     ra_customer_trx_third_pty_reg_id,
     ra_customer_trx_trx_business_category,
-    ra_customer_trx_trx_class AS TRX_CLASS,
+    ra_customer_trx_trx_class as trx_class,
     ra_customer_trx_trx_class_lookup_type,
-    ra_customer_trx_trx_date AS INV_DATE,
-    ra_customer_trx_trx_number AS INV_NUMBER,
+    ra_customer_trx_trx_date as inv_date,
+    ra_customer_trx_trx_number as inv_number,
     ra_customer_trx_upgrade_method,
     ra_customer_trx_user_defined_fisc_class,
     ra_customer_trx_waybill_number,
     ra_customer_trx_wh_update_date,
     _fivetran_deleted,
     load_datetime
-  FROM
+  from
     `cg-gbq-p.staging_zone.invoice_transaction_header`),
-  inv_trans_line AS (
-  SELECT
+  inv_trans_line as (
+  select
     ra_customer_trx_line_customer_trx_line_id,
     _fivetran_synced,
     ra_customer_trx_line_accounting_rule_duration,
@@ -255,7 +256,7 @@ WITH
     ra_customer_trx_line_interface_line_attribute_8,
     ra_customer_trx_line_interface_line_attribute_9,
     ra_customer_trx_line_interface_line_context,
-    ra_customer_trx_line_inventory_item_id AS INVENTORY_ITEM_ID,
+    ra_customer_trx_line_inventory_item_id as inventory_item_id,
     ra_customer_trx_line_invoiced_line_acctg_level,
     ra_customer_trx_line_item_context,
     ra_customer_trx_line_item_exception_rate_id,
@@ -303,7 +304,7 @@ WITH
     ra_customer_trx_line_program_id,
     ra_customer_trx_line_program_update_date,
     ra_customer_trx_line_quantity_credited,
-    ra_customer_trx_line_quantity_invoiced AS QUANTITY,
+    ra_customer_trx_line_quantity_invoiced as quantity,
     ra_customer_trx_line_quantity_ordered,
     ra_customer_trx_line_ra_customer_trx_line_unit_selling_price,
     ra_customer_trx_line_reason_code,
@@ -359,14 +360,14 @@ WITH
     ra_customer_trx_line_wh_update_date,
     _fivetran_deleted,
     load_datetime
-  FROM
+  from
     `cg-gbq-p.staging_zone.invoice_transaction_line` ),
-  cust_acc_mas AS (
-  SELECT
-    cust_account_id AS CUST_ACCOUNT_ID,
+  cust_acc_mas as (
+  select
+    cust_account_id as cust_account_id,
     _fivetran_synced,
     account_established_date,
-    account_name AS ACCOUNT_NAME,
+    account_name as account_name,
     account_number,
     account_termination_date,
     arrivalsets_include_lines_flag,
@@ -398,11 +399,11 @@ WITH
     tax_rounding_rule,
     _fivetran_deleted,
     load_datetime
-  FROM
+  from
     `cg-gbq-p.staging_zone.customer_account_master`),
-  inv_leg_enti AS (
-  SELECT
-    legal_entity_legal_entity_id AS LEGAL_ENTITY_ID,
+  inv_leg_enti as (
+  select
+    legal_entity_legal_entity_id as legal_entity_id,
     _fivetran_synced,
     legal_entity_activity_code,
     legal_entity_created_by,
@@ -416,7 +417,7 @@ WITH
     legal_entity_last_updated_by,
     legal_entity_legal_employer_flag,
     legal_entity_legal_entity_identifier,
-    legal_entity_name AS BUSINESS_UNIT,
+    legal_entity_name as business_unit,
     legal_entity_object_version_number,
     legal_entity_parent_psu_id,
     legal_entity_party_id,
@@ -426,150 +427,150 @@ WITH
     legal_entity_type_of_company,
     _fivetran_deleted,
     load_datetime
-  FROM
+  from
     `cg-gbq-p.staging_zone.invoice_legal_entity`),
-  standard_cost AS (
-  SELECT
+  standard_cost as (
+  select
     organization_id,
-    inventory_item_id AS inventory_itemid,
+    inventory_item_id as inventory_itemid,
     organiztion_code,
     cst_org_name,
     effective_start_date,
     effective_end_date,
     std_cost
-  FROM
-    `cg-gbq-p.consumption_zone.cg_item_standard_cost` --
-  WHERE
-    EFFECTIVE_START_DATE<=current_date
-    AND EFFECTIVE_END_DATE>=current_date ),
+  from
+    `cg-gbq-p.staging_zone.cg_item_standard_cost` 
+  where
+    effective_start_date<=current_date
+    and effective_end_date>=current_date ),
 	
 
 
-incremental_header AS (
-  SELECT
+incremental_header as (
+  select
     *
-  FROM
-    invo_trans_hdr ith where date(_fivetran_synced) >=(SELECT
+  from
+    invo_trans_hdr ith where date(_fivetran_synced) >=(select
     max(date(_fivetran_synced))-3
-  FROM
+  from
     invo_trans_hdr ith))
     --select count(*) from incremental_header
     
     ,
 	increment_line as(
-SELECT
+select
     *
-  FROM
-    inv_trans_line itl where date(_fivetran_synced) >=(SELECT
+  from
+    inv_trans_line itl where date(_fivetran_synced) >=(select
     max(date(_fivetran_synced))-3
-  FROM
+  from
     inv_trans_line itl))
    --select count(*) from  increment_line
     ,
 	
 	increment_cust_acc as(
-SELECT
+select
     *
-  FROM
-    cust_acc_mas cam where date(_fivetran_synced) >=(SELECT
+  from
+    cust_acc_mas cam where date(_fivetran_synced) >=(select
     max(date(_fivetran_synced))-3
-  FROM
+  from
     cust_acc_mas cam)),
 	
 increment_inv_leg as(
-SELECT
+select
     *
-  FROM
-    inv_leg_enti ile where date(_fivetran_synced) >=(SELECT
+  from
+    inv_leg_enti ile where date(_fivetran_synced) >=(select
     max(date(_fivetran_synced))-3
-  FROM
+  from
     inv_leg_enti ile))	,
 	
 
-  join_cte AS (
-  SELECT
+  join_cte as (
+  select
     *
-  FROM
+  from
     incremental_header ith
-  INNER JOIN
+  inner join
     increment_line itl
-  ON
+  on
     ith.customer_trx_id = itl.ra_customer_trx_line_customer_trx_id
-  INNER JOIN
+  inner join
     increment_cust_acc cam
-  ON
-    cam.CUST_ACCOUNT_ID = ith.bill_to_customer_id
-  INNER JOIN
+  on
+    cam.cust_account_id = ith.bill_to_customer_id
+  inner join
     increment_inv_leg ile
-  ON
-    ith.LEGAL_ENTITY_ID = ile.LEGAL_ENTITY_ID
-  RIGHT JOIN
+  on
+    ith.legal_entity_id = ile.legal_entity_id
+  right join
     standard_cost sc
-  ON
+  on
     itl.ra_customer_trx_line_warehouse_id = sc.organization_id
-    AND sc.inventory_itemid = itl.INVENTORY_ITEM_ID
-  WHERE
-    UPPER(ith.TRX_CLASS)='INV'),
+    and sc.inventory_itemid = itl.inventory_item_id
+  where
+    upper(ith.trx_class)='inv'),
   --112996408 
-  aggregated_data AS (
-  SELECT
-    DISTINCT join_cte.ACCOUNT_NAME,
-    join_cte.CUST_ACCOUNT_ID,
+  aggregated_data as (
+  select
+    distinct join_cte.account_name,
+    join_cte.cust_account_id,
     join_cte.complete_flag,
-    join_cte.SOURCE_ORDER_NUMBER,
-    join_cte.ORDER_NUMBER,
-    join_cte.INVOICE_CURRENCY_CODE,
-    join_cte.PURCHASE_ORDER,
+    join_cte.source_order_number,
+    join_cte.order_number,
+    join_cte.invoice_currency_code,
+    join_cte.purchase_order,
     join_cte.trx_class,
     join_cte.inv_date,
     join_cte.inv_number,
     join_cte.inventory_itemid,
-    join_cte.STD_COST * join_cte.QUANTITY AS standard_cost,
-    join_cte.QUANTITY,
+    join_cte.std_cost * join_cte.quantity as standard_cost,
+    join_cte.quantity,
     join_cte.ra_customer_trx_line_extended_amount,
     join_cte.ra_customer_trx_billing_date
-  FROM
+  from
     join_cte ),
-  cg_final_invoice_target AS (
-  SELECT
-    SUM(aggregated_data.ra_customer_trx_line_extended_amount ) AS inv_total,
-    MAX(aggregated_data.ra_customer_trx_billing_date )inv_due,
-    aggregated_data.inventory_itemid,
-    aggregated_data.ACCOUNT_NAME,
-    aggregated_data.CUST_ACCOUNT_ID,
+  cg_final_invoice_target as (
+  select
+    sum(aggregated_data.ra_customer_trx_line_extended_amount ) as inv_total,
+    max(aggregated_data.ra_customer_trx_billing_date )inv_due,
+    aggregated_data.inventory_itemid as inventory_item_id,
+    aggregated_data.account_name,
+    aggregated_data.cust_account_id,
     aggregated_data.complete_flag,
-    aggregated_data.SOURCE_ORDER_NUMBER,
-    aggregated_data.ORDER_NUMBER,
-    aggregated_data.INVOICE_CURRENCY_CODE,
-    COALESCE(aggregated_data.PURCHASE_ORDER,'0') AS PURCHASE_ORDER,
+    aggregated_data.source_order_number,
+    aggregated_data.order_number,
+    aggregated_data.invoice_currency_code,
+    coalesce(aggregated_data.purchase_order,'0') as purchase_order,
     aggregated_data.trx_class,
     aggregated_data.inv_date,
     aggregated_data.inv_number,
-    SUM(aggregated_data.standard_cost)standard_cost,
-    SUM(aggregated_data.QUANTITY)QUANTITY
-  FROM
+    sum(aggregated_data.standard_cost)standard_cost,
+    sum(aggregated_data.quantity)quantity
+  from
     aggregated_data
-  GROUP BY
-    aggregated_data.ACCOUNT_NAME,
-    aggregated_data.CUST_ACCOUNT_ID,
+  group by
+    aggregated_data.account_name,
+    aggregated_data.cust_account_id,
     aggregated_data.complete_flag,
-    aggregated_data.SOURCE_ORDER_NUMBER,
-    aggregated_data.ORDER_NUMBER,
-    aggregated_data.INVOICE_CURRENCY_CODE,
-    aggregated_data.PURCHASE_ORDER,
+    aggregated_data.source_order_number,
+    aggregated_data.order_number,
+    aggregated_data.invoice_currency_code,
+    aggregated_data.purchase_order,
     aggregated_data.trx_class,
     aggregated_data.inv_date,
     aggregated_data.inv_number,
-    aggregated_data.inventory_itemid --,
+    aggregated_data.inventory_itemid 
     --aggregated_data.standard_cost,
-    --aggregated_data.QUANTITY
-  ORDER BY
-    aggregated_data.INV_DATE,
-    aggregated_data.ACCOUNT_NAME,
-    aggregated_data.INV_NUMBER ASC ) --data 5161270
-SELECT
-  MD5(ACCOUNT_NAME ||CUST_ACCOUNT_ID ||complete_flag||SOURCE_ORDER_NUMBER||ORDER_NUMBER||INVOICE_CURRENCY_CODE||PURCHASE_ORDER|| trx_class ||inv_date||inv_number|| inventory_itemid)s_key,
+    --aggregated_data.quantity
+  order by
+    aggregated_data.inv_date,
+    aggregated_data.account_name,
+    aggregated_data.inv_number asc ) --data 5161270
+select
+  md5(account_name ||cust_account_id ||complete_flag||source_order_number||order_number||invoice_currency_code||purchase_order|| trx_class ||inv_date||inv_number|| inventory_item_id)s_key,
   *,
-  current_datetime AS load_datetime
-FROM
+  current_datetime() as load_datetime
+from
   cg_final_invoice_target
