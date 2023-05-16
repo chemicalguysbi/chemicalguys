@@ -1,14 +1,13 @@
-	
 {{
     config(
-        materialized='incremental',
+        materialized='table',
         unique_key = 's_key',
         tags = 'cg_sales_orders_inc_fact'
     )
 }}
 --CG_DOO_FULFILL_LINES_ALL
 with sales_orders_fulfill_line_cte as (
-SELECT
+SELECT distinct
 fulfill_line_source_order_number	as	source_order_number	,
 fulfill_line_creation_date	as	order_date	,
 fulfill_line_request_ship_date	as	request_ship_date	,
@@ -28,7 +27,7 @@ FROM
 
 --CG_DOO_HEADERS_ALL
 ,sales_orders_header_cte as (
-  SELECT
+  SELECT distinct
   header_id AS header_id,
   header_open_flag AS open_flag,
   header_ordered_date AS ordered_date,
@@ -47,7 +46,7 @@ FROM
 )
 --CG_INV_ORGANIZATION_DEFINITIONS_V
 ,sales_orders_inventory_org_parameters_cycle_count_cte as (
-  SELECT
+  SELECT distinct
 business_unit_peobusiness_unit_id as organization_code,
 organization_id
 FROM
@@ -55,7 +54,7 @@ FROM
 )
 --CG_EGP_SYSTEM_ITEMS_B
 ,sales_orders_item_extract_cte as (
-  SELECT
+  SELECT distinct
 item_base_peoitem_number as item_number,
 item_base_peoinventory_item_id as inventory_item_id,
 item_base_peoorganization_id as organization_id,
@@ -66,7 +65,7 @@ FROM
 )
 --CG_DOO_ORDER_ADDRESSES
 ,sales_orders_order_address_cte as (
-  SELECT
+  SELECT distinct
 order_address_party_site_id as party_site_id,
 order_address_header_id as header_id,
 order_address_cust_acct_id as cust_acct_id,
@@ -78,7 +77,7 @@ FROM
 
 --CG_DOO_ORDER_ADDRESSES_2
 ,sales_orders_order_address_cte_2 as (
-  SELECT
+  SELECT distinct
 order_address_header_id as header_id,
 order_address_cust_acct_id as cust_acct_id,
 order_address_use_type as address_use_type
@@ -89,7 +88,7 @@ FROM
 
 --CG_HZ_LOCATIONS
 ,sales_orders_location_cte as (
-  select 
+  select distinct
   address_1,
   address_2,
   city,
@@ -104,7 +103,7 @@ FROM
 
 --CG_HZ_PARTY_SITES
 ,sales_orders_party_site_cte as (
-  SELECT
+  SELECT distinct
 party_site_id,
 location_id,
 'SHIP_TO' as site_use_type
@@ -115,7 +114,8 @@ FROM
 
 --CG_HZ_CUST_ACCOUNTS
 ,customer_account_master_cte as (
-  select account_name,
+  select distinct 
+  account_name,
   cust_account_id
    from cg-gbq-p.staging_zone.customer_account_master
 )
@@ -158,9 +158,9 @@ customer_account_master_cte.account_name,
 
   coalesce(sales_orders_header_cte.request_ship_date,sales_orders_fulfill_line_cte.request_ship_date) as 
   request_ship_date,
-  safe_cast(sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE as FLOAT64) as
-  extended_amount
-  
+--   (safe_cast(sales_orders_fulfill_line_cte.ordered_qty_ea as float64) * safe_cast(sales_orders_fulfill_line_cte.EA_PRICE as FLOAT64)) as
+--   extended_amount
+  (sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE) extended_amount
    from sales_orders_fulfill_line_cte
 ---join 1  7081375
 inner join sales_orders_header_cte 
@@ -195,7 +195,8 @@ on sales_orders_order_address_cte_2.cust_acct_id = customer_account_master_cte.c
 
 where 
 
-sales_orders_header_cte.open_flag = 'Y' AND sales_orders_item_extract_cte.item_number <> 'Discount' AND sales_orders_item_extract_cte.item_number <> 'Discount 5' AND sales_orders_item_extract_cte.item_number <> 'Discount 10' AND sales_orders_item_extract_cte.item_number <> 'FREIGHT CHARGE' AND sales_orders_item_extract_cte.item_number <> 'DISCOUNT CHARGE' AND sales_orders_item_extract_cte.item_number <> 'HANDLING CHARGE'
+-- sales_orders_header_cte.open_flag = 'Y' AND
+sales_orders_item_extract_cte.item_number <> 'Discount' AND sales_orders_item_extract_cte.item_number <> 'Discount 5' AND sales_orders_item_extract_cte.item_number <> 'Discount 10' AND sales_orders_item_extract_cte.item_number <> 'FREIGHT CHARGE' AND sales_orders_item_extract_cte.item_number <> 'DISCOUNT CHARGE' AND sales_orders_item_extract_cte.item_number <> 'HANDLING CHARGE'
 and sales_orders_order_address_cte_2.address_use_type = 'BILL_TO'
 )
 
@@ -268,10 +269,6 @@ state,
 cust_acct_id,
 account_name,
 request_ship_date
-
-order by
-order_number,
-item_number
 )
 --56061
 select md5(concat(order_date,
@@ -339,5 +336,3 @@ request_ship_date,
 extended_amount,
 current_datetime() as load_date_time
 from aggregrate_cte 
--- where order_number = '1063224'
--- and item_number = 'ACC_326'

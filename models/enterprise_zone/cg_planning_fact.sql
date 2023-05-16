@@ -20,11 +20,14 @@ cust_id,
 main_class_category,
 main_class_sub_category
 
-	FROM `cg-gbq-p.consumption_zone.cg_customer_class`
+FROM 
+`cg-gbq-p.consumption_zone.cg_customer_class`
 )
 
 ,planning_data as (
-SELECT account_name,upper(account_name) account_name_upper,due_date,amount FROM `cg-gbq-p.consumption_zone.cg_planning_data`
+SELECT account_name,upper(account_name) account_name_upper,due_date,amount 
+FROM 
+`cg-gbq-p.consumption_zone.cg_planning_data`
 )
 
 ,final_data as (
