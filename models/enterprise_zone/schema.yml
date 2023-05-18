@@ -37,3 +37,5 @@ models:
               tests:
                   - unique
                   - not_null
+    - name: cg_websites_sales_fact
+    - name: dg_sales_fact
