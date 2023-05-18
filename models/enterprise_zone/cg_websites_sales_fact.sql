@@ -5,33 +5,22 @@
          )
 }}
 
-select
+select distinct
   a.order_summary_number,
   a.order_line_number,
   a.status,
-  a.quantity_fulfilled,
-  a.quantity_returned,
   a.quantity,
   a.quantity_ordered,
-  a.unit_price,
-  a.gross_unit_price,
-  a.gross_revenue,
   a.line_subtotal,
-  a.tax as order_details_tax,
   a.distributed_order_adjustments,
   a.line_adjustments,
   a.pretax_total,
   a.product_product_code,
   a._fivetran_synced as details_fivetran_synced,
-  b.billing_email_address,
   date(b.created_date) created_date,
   b.subtotal,
-  b.shipping,
   b.pretax_subtotal,
-  b.tax,
-  b.order_summary_total,
-  b.created_by,
-  b._fivetran_synced,
+  b._fivetran_synced as header_fivetran_synced,
   b.account_account_id,
   b.account_account_name,
   c.item_number,
@@ -39,8 +28,7 @@ select
   c.item_dsecription,
   c.item_status_code,
   c.item_type,
-  c.planner_code,
-  c.uom_code,
+  current_datetime() as load_date_time
 from
   `cg-gbq-p.staging_zone.sales_force_order_details_view` a
 inner join
