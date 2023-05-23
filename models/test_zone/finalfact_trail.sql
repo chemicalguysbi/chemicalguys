@@ -1,11 +1,10 @@
 {{
     config(
-        materialized='incremental',
-        unique_key='s_key',
-        tags = 'invoice_final_fact_test'
+        materialized='table',
+        unique_key='s_key'
     )
 }}
---incremental load
+ --full load code
 WITH
   invo_trans_hdr AS (
   SELECT
@@ -21,8 +20,7 @@ WITH
     ra_customer_trx_purchase_order AS PURCHASE_ORDER,
     ra_customer_trx_trx_class AS TRX_CLASS,
     ra_customer_trx_trx_date AS INV_DATE,
-    ra_customer_trx_trx_number AS INV_NUMBER,
-    _fivetran_synced
+    ra_customer_trx_trx_number AS INV_NUMBER
 
   FROM
     `cg-gbq-p.staging_zone.invoice_transaction_header`
@@ -34,14 +32,12 @@ WITH
     ra_customer_trx_line_customer_trx_id , 
     ra_customer_trx_line_extended_amount, 
     ra_customer_trx_line_inventory_item_id AS INVENTORY_ITEM_ID,
-    _fivetran_synced
   FROM
     `cg-gbq-p.staging_zone.invoice_transaction_line` ),
   cust_acc_mas AS (
   SELECT
     cust_account_id AS CUST_ACCOUNT_ID,
     account_name AS ACCOUNT_NAME,
-    _fivetran_synced
   FROM
     `cg-gbq-p.staging_zone.customer_account_master`),
   inv_leg_enti AS (
@@ -49,51 +45,9 @@ WITH
     legal_entity_legal_entity_id AS LEGAL_ENTITY_ID,
     
     legal_entity_name AS BUSINESS_UNIT,
-    _fivetran_synced
 
   FROM
     `cg-gbq-p.staging_zone.invoice_legal_entity`),
-
-incremental_header AS (
-  SELECT
-    *
-  FROM
-    invo_trans_hdr ith where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    invo_trans_hdr ith))
-    --select count(*) from incremental_header
-    
-    ,
-	increment_line as(
-SELECT
-    *
-  FROM
-    inv_trans_line itl where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    inv_trans_line itl))
-   --select count(*) from  increment_line
-    ,
-	
-	increment_cust_acc as(
-SELECT
-    *
-  FROM
-    cust_acc_mas cam where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    cust_acc_mas cam)),
-	
-increment_inv_leg as(
-SELECT
-    *
-  FROM
-    inv_leg_enti ile where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    inv_leg_enti ile))	,
-    
   join_cte AS (
   SELECT
   ra_customer_trx_line_extended_amount
@@ -142,7 +96,7 @@ SELECT
   purchase_order,
   trx_class,
   inv_date,
-  inv_number,
+inv_number,
   inventory_item_id,
   open_balance
 FROM

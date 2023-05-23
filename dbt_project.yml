@@ -44,6 +44,4 @@ models:
       consumption_zone:
         +materialized: view
         +schema:  consumption_zone
-      trail_zone:
-        +materialized: view
-        +schema:  trail_zone
+
