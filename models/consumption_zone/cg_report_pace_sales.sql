@@ -205,7 +205,7 @@ GROUP BY
   0 AS planned_budget_amount,
   0 AS incomplete_inv_amount,
   0 AS standard_cost,
-  0 invoiced_quantity,
+  sum(quantity) invoiced_quantity,
   'WEBSITES DATA' AS source_key
 FROM
   `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`

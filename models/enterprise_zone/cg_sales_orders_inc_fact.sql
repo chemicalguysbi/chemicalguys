@@ -12,11 +12,11 @@ fulfill_line_source_order_number	as	source_order_number	,
 fulfill_line_creation_date	as	order_date	,
 fulfill_line_request_ship_date	as	request_ship_date	,
 fulfill_line_source_line_number	as	source_line_number	,
-fulfill_line_fulfill_line_number	as	fulfill_line_number	,
-fulfill_line_id	as	fulfill_line_id	,
-fulfill_line_ordered_qty	as ordered_qty_ea	,
+fulfill_line_fulfill_line_number as	fulfill_line_number	,
+fulfill_line_id	as fulfill_line_id	,
+fulfill_line_ordered_qty as ordered_qty_ea	,
 fulfill_line_unit_selling_price	as	ea_price	,
-fulfill_line_status_code	as	line_status	,
+fulfill_line_status_code as	line_status	,
 fulfill_line_ship_to_party_site_id	as	ship_to_party_site_id	,
 fulfill_line_header_id	as	header_id	,
 fulfill_line_fulfill_org_id	as	fulfill_org_id	,
@@ -160,7 +160,7 @@ customer_account_master_cte.account_name,
   request_ship_date,
 --   (safe_cast(sales_orders_fulfill_line_cte.ordered_qty_ea as float64) * safe_cast(sales_orders_fulfill_line_cte.EA_PRICE as FLOAT64)) as
 --   extended_amount
-  (sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE) extended_amount
+  round((sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE),2) extended_amount
    from sales_orders_fulfill_line_cte
 ---join 1  7081375
 inner join sales_orders_header_cte 
