@@ -8,10 +8,14 @@ jobs:
        command: dbt run --models staging_zone 
  - name: nightly
 <<<<<<< HEAD
+<<<<<<< HEAD
    schedule: 0 */12 * * * 
 =======
    schedule: 0 20 * * * 
 >>>>>>> 909169c6b797b2a6fc10a4de2650df40669112af
+=======
+   schedule: 0 */12 * * * 
+>>>>>>> 6e985cdcacd9397c1a58fddab64b3006df9c990b
    steps:
      - name: run models
        command: dbt run --models staging_zone
