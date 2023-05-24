@@ -96,7 +96,7 @@ SELECT
   sum (inv_total) incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
-  'INVOICE_COSTING' as source_key
+  'INCOMPLETE_INVOICE' as source_key
 FROM
   cg-gbq-p.enterprise_zone.cg_invoice_final_fact
 WHERE

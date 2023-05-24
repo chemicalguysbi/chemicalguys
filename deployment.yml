@@ -1,0 +1,13 @@
+jobs:
+ - name: daily
+   targetName: cg-gbq-p 
+   schedule: 0 08 * * * 
+   timeout: 2h30m
+   steps:
+     - name: run models 
+       command: dbt run --models staging_zone 
+ - name: daily
+   schedule: 0 20 * * * 
+   steps:
+     - name: run models
+       command: dbt run --models staging_zone
