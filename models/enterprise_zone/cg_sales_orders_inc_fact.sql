@@ -22,9 +22,8 @@ fulfill_line_header_id	as	header_id	,
 fulfill_line_fulfill_org_id	as	fulfill_org_id	,
 fulfill_line_inventory_item_id	as	inventory_item_id	
 
-FROM
- 
-{{ ref('sales_orders_fulfill_line') }}
+FROm
+{{ ref('sales_orders_fulfill_line') }})
 --CG_DOO_HEADERS_ALL
 ,sales_orders_header_cte as (
   SELECT distinct

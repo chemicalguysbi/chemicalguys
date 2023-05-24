@@ -1,27 +1,27 @@
 jobs:
  - name: staging_zone_dbt_first_12hrun
    targetName: cg-gbq-p 
-   schedule: 30 13 * * * 
+   schedule: "0 2,14 * * *" 
    timeout: 2h30m
    steps:
      - name: run models 
        command: dbt run --models staging_zone 
  - name: staging_zone_dbt_second_12hrun
-   schedule: 30 01 * * * 
+   schedule: "30 14 * * *" 
    timeout: 2h30m
    steps:
      - name: run models
        command: dbt run --models staging_zone
 
  - name: enterprise_zone_dbt_first_12hrun
-   schedule: 45 13 * * * 
+   schedule: "15 2 * * *" 
    timeout: 2h30m
    steps:
      - name: run models
        command: dbt run --models enterprise_zone
   
  - name: enterprise_zone_dbt_second_12hrun
-   schedule: 45 1 * * *
+   schedule: "15 14 * * *"
    timeout: 2h30m
    steps:
      - name: run models
@@ -29,14 +29,14 @@ jobs:
 
   
  - name: consumption_zone_dbt_first_12hrun
-   schedule: 0 14 * * *
+   schedule: "30 3 * * *"
    timeout: 2h30m
    steps:
      - name: run models
        command: dbt run --models consumption_zone
 
  - name: consumption_zone_dbt_second_12hrun
-   schedule: 0 02 * * *
+   schedule: "30 15 * * *"
    timeout: 2h30m
    steps:
      - name: run models
