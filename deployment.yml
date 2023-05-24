@@ -1,12 +1,12 @@
 jobs:
- - name: daily
+ - name: staging_zone_dbt_first_12hrun
    targetName: cg-gbq-p 
    schedule: 0 */12 * * * 
    timeout: 2h30m
    steps:
      - name: run models 
        command: dbt run --models staging_zone 
- - name: nightly
+ - name: staging_zone_dbt_second_12hrun
    schedule: 0 */12 * * * 
    steps:
      - name: run models
