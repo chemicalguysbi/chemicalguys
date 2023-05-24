@@ -23,8 +23,8 @@ fulfill_line_fulfill_org_id	as	fulfill_org_id	,
 fulfill_line_inventory_item_id	as	inventory_item_id	
 
 FROM
-  cg-gbq-p.staging_zone.sales_orders_fulfill_line)
-
+ 
+{{ ref('sales_orders_fulfill_line') }}
 --CG_DOO_HEADERS_ALL
 ,sales_orders_header_cte as (
   SELECT distinct
@@ -40,7 +40,7 @@ FROM
   header_submitted_flag AS submitted_flag,
   header_change_version_number AS change_revision_number
 FROM
-  cg-gbq-p.staging_zone.sales_orders_header
+  {{ ref('sales_orders_header') }}
   where (header_status_code <> 'DOO_DRAFT' AND header_submitted_flag = 'Y') OR
   (header_status_code = 'DOO_DRAFT' AND header_customer_po_number = '1')
 )
@@ -50,7 +50,7 @@ FROM
 business_unit_peobusiness_unit_id as organization_code,
 organization_id
 FROM
- cg-gbq-p.staging_zone.sales_orders_inventory_org_parameters_cycle_count
+ {{ ref('sales_orders_inventory_org_parameters_cycle_count') }}
 )
 --CG_EGP_SYSTEM_ITEMS_B
 ,sales_orders_item_extract_cte as (
@@ -61,7 +61,7 @@ item_base_peoorganization_id as organization_id,
 item_base_peotrade_item_descriptor as description
 
 FROM
- cg-gbq-p.staging_zone.sales_orders_item_extract
+ {{ ref('sales_orders_item_extract') }}
 )
 --CG_DOO_ORDER_ADDRESSES
 ,sales_orders_order_address_cte as (
@@ -72,7 +72,7 @@ order_address_cust_acct_id as cust_acct_id,
 order_address_use_type as address_use_type
 
 FROM
- cg-gbq-p.staging_zone.sales_orders_order_address
+ {{ ref('sales_orders_order_address') }}
 )
 
 --CG_DOO_ORDER_ADDRESSES_2
@@ -83,7 +83,7 @@ order_address_cust_acct_id as cust_acct_id,
 order_address_use_type as address_use_type
 
 FROM
- cg-gbq-p.staging_zone.sales_orders_order_address
+  {{ ref('sales_orders_order_address') }}
 )
 
 --CG_HZ_LOCATIONS
@@ -98,7 +98,7 @@ FROM
   location_id
 
   from
-  cg-gbq-p.staging_zone.sales_orders_location
+  {{ ref('sales_orders_location') }}
 )
 
 --CG_HZ_PARTY_SITES
@@ -109,7 +109,7 @@ location_id,
 'SHIP_TO' as site_use_type
 
 FROM
- cg-gbq-p.staging_zone.sales_orders_party_site
+ {{ ref('sales_orders_party_site') }}
 )
 
 --CG_HZ_CUST_ACCOUNTS
@@ -117,7 +117,8 @@ FROM
   select distinct 
   account_name,
   cust_account_id
-   from cg-gbq-p.staging_zone.customer_account_master
+   from 
+   {{ ref('customer_account_master') }}
 )
 
 ,final_cte as (

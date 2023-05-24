@@ -23,9 +23,7 @@ WITH
     ra_customer_trx_trx_number as inv_number,
     ra_customer_trx_billing_date
   FROM
-  cg-gbq-p.oracle_fusion_fscm_finextract_arbiccextract.transaction_header_extract_pvo
-
-    -- `cg-gbq-p.staging_zone.invoice_transaction_header`
+    {{ ref('invoice_transaction_header') }}
     where UPPER(ra_customer_trx_trx_class) = 'INV'
     
     ),
@@ -38,9 +36,7 @@ WITH
     ra_customer_trx_line_extended_amount,
   
   FROM
-  cg-gbq-p.oracle_fusion_fscm_finextract_arbiccextract.transaction_line_extract_pvo
-
-    -- `cg-gbq-p.staging_zone.invoice_transaction_line` 
+    {{ ref('invoice_transaction_line') }} 
     )
 	
   ,cust_acc_mas AS (
@@ -49,9 +45,7 @@ WITH
     account_name as account_name
 
   FROM
-  cg-gbq-p.oracle_fusion_fscm_partiesanalytics.customer_account
-
-    -- `cg-gbq-p.staging_zone.customer_account_master`
+    {{ ref('customer_account_master') }} 
     )
 
   ,inv_leg_enti AS (
@@ -59,7 +53,8 @@ WITH
     legal_entity_legal_entity_id as legal_entity_id,
     legal_entity_name as business_unit
   FROM
-    `cg-gbq-p.staging_zone.invoice_legal_entity`),
+    {{ ref('invoice_legal_entity') }}
+    ),
   standard_cost AS (
   SELECT distinct
     organization_id,
