@@ -25,7 +25,7 @@ WITH
     _fivetran_synced
 
   FROM
-    `cg-gbq-p.staging_zone.invoice_transaction_header`
+    {{ ref('invoice_transaction_header') }}
     WHERE
     UPPER(ra_customer_trx_trx_class)='INV' 
     ),
@@ -36,14 +36,18 @@ WITH
     ra_customer_trx_line_inventory_item_id AS INVENTORY_ITEM_ID,
     _fivetran_synced
   FROM
-    `cg-gbq-p.staging_zone.invoice_transaction_line` ),
+     {{ ref('invoice_transaction_line') }} 
+    
+    ),
   cust_acc_mas AS (
   SELECT
     cust_account_id AS CUST_ACCOUNT_ID,
     account_name AS ACCOUNT_NAME,
     _fivetran_synced
   FROM
-    `cg-gbq-p.staging_zone.customer_account_master`),
+   {{ ref('customer_account_master') }}
+    
+    ),
   inv_leg_enti AS (
   SELECT
     legal_entity_legal_entity_id AS LEGAL_ENTITY_ID,
@@ -52,7 +56,9 @@ WITH
     _fivetran_synced
 
   FROM
-    `cg-gbq-p.staging_zone.invoice_legal_entity`),
+     {{ ref('invoice_legal_entity') }}
+    
+    ),
 
 incremental_header AS (
   SELECT
