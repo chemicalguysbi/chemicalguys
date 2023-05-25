@@ -193,7 +193,7 @@ GROUP BY
   coalesce(inventory_item_id,0) inventory_item_id,
   1424 AS customer_account_id,
   --instead of cross join hard coded US WEBSITES customer_id present in cg_customer_class table
-  '0' AS source_number,
+  order_summary_number AS source_number,
   case when substring(cast(created_date as string),1,7) = substring(cast(current_date as string),1,7) 
   then
   ROUND(sum(Pretax_Total)/EXTRACT(DAY FROM current_date - 1 ),2) *
@@ -211,14 +211,15 @@ FROM
   `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
 GROUP BY
   created_date,
-  coalesce(inventory_item_id,0)
+  coalesce(inventory_item_id,0),
+  order_summary_number
  union all
  SELECT
   date as date_key,
   coalesce(inventory_item_id,0) inventory_item_id,
   1423 as customer_account_id,
   --instead of cross join hard coded OWNED STORE SALES customer_id present in cg_customer_class table
-  '0' source_number,
+  cast(saleid as string) as source_number,
   ROUND(case when substring(cast(date as string),1,7) = substring(cast(current_date as string),1,7) 
   then
   sum(amt)/EXTRACT(DAY FROM current_date - 1 ) *
@@ -236,7 +237,8 @@ GROUP BY
  FROM `cg-gbq-p.enterprise_zone.dg_sales_fact` 
 group by 
 date,
-coalesce(inventory_item_id,0)
+coalesce(inventory_item_id,0),
+saleid
   )
 
 SELECT 
