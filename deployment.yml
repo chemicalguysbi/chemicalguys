@@ -7,7 +7,7 @@ jobs:
      - name: run models 
        command: dbt run --models @consumption_zone 
  - name: staging_zone_dbt_second_12hrun
-   schedule: "30 18 * * *" 
+   schedule: "10 22 * * *" 
    timeout: 2h30m
    steps:
      - name: run models
