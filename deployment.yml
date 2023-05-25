@@ -5,39 +5,10 @@ jobs:
    timeout: 2h30m
    steps:
      - name: run models 
-       command: dbt run --models staging_zone 
+       command: dbt run --models @consumption_zone 
  - name: staging_zone_dbt_second_12hrun
    schedule: "30 18 * * *" 
    timeout: 2h30m
    steps:
      - name: run models
-       command: dbt run --models staging_zone
-
- - name: enterprise_zone_dbt_first_12hrun
-   schedule: "45 6 * * *" 
-   timeout: 2h30m
-   steps:
-     - name: run models
-       command: dbt run --models enterprise_zone
-  
- - name: enterprise_zone_dbt_second_12hrun
-   schedule: "45 18 * * *"
-   timeout: 2h30m
-   steps:
-     - name: run models
-       command: dbt run --models enterprise_zone
-
-  
- - name: consumption_zone_dbt_first_12hrun
-   schedule: "0 7 * * *"
-   timeout: 2h30m
-   steps:
-     - name: run models
-       command: dbt run --models consumption_zone
-
- - name: consumption_zone_dbt_second_12hrun
-   schedule: "0 19 * * *"
-   timeout: 2h30m
-   steps:
-     - name: run models
-       command: dbt run --models consumption_zone
+       command: dbt run --models @consumption_zone

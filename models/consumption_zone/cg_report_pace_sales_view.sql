@@ -5,4 +5,6 @@
          )
    }}
 select *
-from cg-gbq-p.consumption_zone.cg_report_pace_sales
+from 
+--cg-gbq-p.consumption_zone.cg_report_pace_sales
+{{ ref('cg_report_pace_sales') }}
