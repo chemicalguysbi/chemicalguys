@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: staging_zone
+    tables:
+      - name: customer_account_master
+      - name: invoice_legal_entity
+      - name: invoice_payment_schedule
+      - name: invoice_transaction_header
+      - name: invoice_transaction_line
+      - name: sales_orders_fulfill_line
+      - name: sales_orders_header
+      - name: sales_orders_inventory_org_parameters_cycle_count
+      - name: sales_orders_item_extract
+      - name: sales_orders_location
+      - name: sales_orders_order_address
+      - name: sales_orders_party_site
+
+  - name: enterprise_zone
+    tables:
+      - name: table_name
+      - name: cg_invoice_final_fact
+      - name: cg_sales_orders_inc_fact
+      - name: cg_invoice_target_cost
+      - name: cg_planning_fact
+      - name: cg_websites_sales_fact
+      - name: dg_sales_fact
+  
+  - name: consumption_zone
+    tables:
+      - name: cg_dim_customer_class
+      - name: cg_report_pace_sales
+      - name: cg_report_pace_sales_view
