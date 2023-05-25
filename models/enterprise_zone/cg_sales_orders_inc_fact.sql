@@ -23,7 +23,9 @@ fulfill_line_fulfill_org_id	as	fulfill_org_id	,
 fulfill_line_inventory_item_id	as	inventory_item_id	
 
 FROm
-{{ ref('sales_orders_fulfill_line') }})
+{{ ref('sales_orders_fulfill_line') }}
+-- where date(_fivetran_synced) >= current_date - 3
+)
 --CG_DOO_HEADERS_ALL
 ,sales_orders_header_cte as (
   SELECT distinct
@@ -42,6 +44,7 @@ FROM
   {{ ref('sales_orders_header') }}
   where (header_status_code <> 'DOO_DRAFT' AND header_submitted_flag = 'Y') OR
   (header_status_code = 'DOO_DRAFT' AND header_customer_po_number = '1')
+  --and date(_fivetran_synced) >= current_date - 3 
 )
 --CG_INV_ORGANIZATION_DEFINITIONS_V
 ,sales_orders_inventory_org_parameters_cycle_count_cte as (
@@ -50,6 +53,7 @@ business_unit_peobusiness_unit_id as organization_code,
 organization_id
 FROM
  {{ ref('sales_orders_inventory_org_parameters_cycle_count') }}
+ --where date(_fivetran_synced) >= current_date - 3
 )
 --CG_EGP_SYSTEM_ITEMS_B
 ,sales_orders_item_extract_cte as (
@@ -61,6 +65,7 @@ item_base_peotrade_item_descriptor as description
 
 FROM
  {{ ref('sales_orders_item_extract') }}
+ --where date(_fivetran_synced) >= current_date - 3
 )
 --CG_DOO_ORDER_ADDRESSES
 ,sales_orders_order_address_cte as (
@@ -72,6 +77,7 @@ order_address_use_type as address_use_type
 
 FROM
  {{ ref('sales_orders_order_address') }}
+ --where date(_fivetran_synced) >= current_date - 3
 )
 
 --CG_DOO_ORDER_ADDRESSES_2
@@ -83,6 +89,7 @@ order_address_use_type as address_use_type
 
 FROM
   {{ ref('sales_orders_order_address') }}
+ -- where date(_fivetran_synced) >= current_date - 3
 )
 
 --CG_HZ_LOCATIONS
@@ -98,6 +105,7 @@ FROM
 
   from
   {{ ref('sales_orders_location') }}
+  --where date(_fivetran_synced) >= current_date - 3
 )
 
 --CG_HZ_PARTY_SITES
@@ -109,6 +117,7 @@ location_id,
 
 FROM
  {{ ref('sales_orders_party_site') }}
+ --where date(_fivetran_synced) >= current_date - 3
 )
 
 --CG_HZ_CUST_ACCOUNTS
@@ -118,6 +127,7 @@ FROM
   cust_account_id
    from 
    {{ ref('customer_account_master') }}
+  -- where date(_fivetran_synced) >= current_date - 3
 )
 
 ,final_cte as (
@@ -145,22 +155,18 @@ sales_orders_item_extract_cte.item_number,
 sales_orders_item_extract_cte.description,
 sales_orders_order_address_cte.party_site_id,
 'ship_to' as site_use_type,
-
 sales_orders_location_cte.address_1,
 sales_orders_location_cte.address_2,
 sales_orders_location_cte.city,
 sales_orders_location_cte.country,
 sales_orders_location_cte.postal_code,
 sales_orders_location_cte.state,
-
 sales_orders_order_address_cte_2.cust_acct_id,
 customer_account_master_cte.account_name,
-
-  coalesce(sales_orders_header_cte.request_ship_date,sales_orders_fulfill_line_cte.request_ship_date) as 
+coalesce(sales_orders_header_cte.request_ship_date,sales_orders_fulfill_line_cte.request_ship_date) as 
   request_ship_date,
---   (safe_cast(sales_orders_fulfill_line_cte.ordered_qty_ea as float64) * safe_cast(sales_orders_fulfill_line_cte.EA_PRICE as FLOAT64)) as
---   extended_amount
-  round((sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE),2) extended_amount
+round((sales_orders_fulfill_line_cte.ordered_qty_ea * sales_orders_fulfill_line_cte.EA_PRICE),2) extended_amount
+   
    from sales_orders_fulfill_line_cte
 ---join 1  7081375
 inner join sales_orders_header_cte 
