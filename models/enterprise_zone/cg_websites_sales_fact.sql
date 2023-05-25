@@ -24,7 +24,7 @@ select distinct
   b.account_account_id,
   b.account_account_name,
   c.item_number,
-  c.inventory_item_id,
+  coalesce(c.inventory_item_id,0) inventory_item_id,
   c.item_dsecription,
   c.item_status_code,
   c.item_type,

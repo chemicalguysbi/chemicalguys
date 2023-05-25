@@ -190,7 +190,7 @@ GROUP BY
   UNION ALL
   SELECT
   created_date AS date_key,
-  0 inventory_item_id,
+  coalesce(inventory_item_id,0) inventory_item_id,
   1424 AS customer_account_id,
   --instead of cross join hard coded US WEBSITES customer_id present in cg_customer_class table
   '0' AS source_number,
@@ -210,11 +210,12 @@ GROUP BY
 FROM
   `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
 GROUP BY
-  created_date
+  created_date,
+  coalesce(inventory_item_id,0)
  union all
  SELECT
   date as date_key,
-  0 inventory_item_id,
+  coalesce(inventory_item_id,0) inventory_item_id,
   1423 as customer_account_id,
   --instead of cross join hard coded OWNED STORE SALES customer_id present in cg_customer_class table
   '0' source_number,
@@ -234,8 +235,8 @@ GROUP BY
 
  FROM `cg-gbq-p.enterprise_zone.dg_sales_fact` 
 group by 
-date
-
+date,
+coalesce(inventory_item_id,0)
   )
 
 SELECT 
