@@ -54,21 +54,21 @@ WITH
     legal_entity_name as business_unit
   FROM
     {{ ref('invoice_legal_entity') }}
-    ),
-  standard_cost AS (
-  SELECT distinct
-    organization_id,
-    inventory_item_id AS inventory_itemid,
-    organization_code,
-    cst_org_name,
-    effective_start_date,
-    effective_end_date,
-    std_cost
-  FROM
-    `cg-gbq-p.staging_zone.cg_item_standard_cost`
-  WHERE
-    effective_start_date<=current_date
-    AND effective_end_date>=current_date )
+    )
+--   ,standard_cost AS (
+--   SELECT distinct
+--     organization_id,
+--     inventory_item_id AS inventory_itemid,
+--     organization_code,
+--     cst_org_name,
+--     effective_start_date,
+--     effective_end_date,
+--     std_cost
+--   FROM
+--     `cg-gbq-p.staging_zone.cg_item_standard_cost`
+--   WHERE
+--     effective_start_date<=current_date
+--     AND effective_end_date>=current_date )
 	
 
   ,join_cte AS (
@@ -84,7 +84,7 @@ WITH
     ith.inv_date,
     ith.inv_number,
     COALESCE(itl.inventory_item_id,0) as inventory_itemid,
-    COALESCE(round(sc.std_cost * itl.quantity),0) AS standard_cost,
+    COALESCE(round(sc.current_cost * itl.quantity),0) AS standard_cost,
     coalesce(itl.quantity,0) quantity,
     itl.ra_customer_trx_line_extended_amount,
     ith.ra_customer_trx_billing_date,
@@ -105,10 +105,10 @@ WITH
   on
     ith.legal_entity_id = ile.legal_entity_id
   left join
-    standard_cost sc
+    {{ ref('standard_cost') }} sc
   on
     itl.ra_customer_trx_line_warehouse_id = sc.organization_id
-    and sc.inventory_itemid = itl.inventory_item_id
+    and sc.inventory_item_id = itl.inventory_item_id
   )
  
   select

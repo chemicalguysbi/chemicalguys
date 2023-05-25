@@ -12,8 +12,7 @@ upper(account_name) as account_name_upper,
 account_number,			
 customer_account_id,				
 customer_type,			
-customer_class_code,				
-customer_class,				
+customer_class_code,							
 customer_category,				
 main_class,
 cust_id,
@@ -21,7 +20,8 @@ main_class_category,
 main_class_sub_category
 
 FROM 
-`cg-gbq-p.consumption_zone.cg_customer_class`
+-- `cg-gbq-p.consumption_zone.cg_customer_class`
+{{ ref('cg_dim_customer_class') }}
 )
 
 ,planning_data as (
