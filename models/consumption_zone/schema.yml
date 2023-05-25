@@ -10,15 +10,6 @@ models:
             tests:
                 - unique
                 - not_null
-
-    - name: cg_report_pace_sales
-      #description: "A starter dbt model"
-      columns:
-          - name: s_key
-            description: "The primary key for this table"
-            tests:
-                - unique
-                - not_null
     
     - name: cg_report_pace_sales_view
       #description: "A starter dbt model"
