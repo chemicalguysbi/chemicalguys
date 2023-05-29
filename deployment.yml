@@ -1,13 +1,13 @@
 jobs:
- - name: cg_sales_orders_fact_first_run
+ - name: cg_sales_orders_fact_night_run
    targetName: cg-gbq-p 
-   schedule: "30 6 * * *"
+   schedule: "45 6 * * *"
    timeout: 2h30m
    steps:
      - name: run models 
        command: dbt run --models @consumption_zone 
- - name: cg_sales_orders_fact_second_run
-   schedule: "30 18 * * *" 
+ - name: cg_sales_orders_fact_morning_run
+   schedule: "45 18 * * *" 
    timeout: 2h30m
    steps:
      - name: run models
