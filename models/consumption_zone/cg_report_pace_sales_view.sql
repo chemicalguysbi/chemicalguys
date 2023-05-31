@@ -242,7 +242,7 @@ GROUP BY
   0 planned_budget_amount,
   0 incomplete_inv_amount,
   0 standard_cost,
-  0 invoiced_quantity,
+  sum(qty) as invoiced_quantity,
   'LIGHT SPEED DATA' as source_key
 
  FROM
