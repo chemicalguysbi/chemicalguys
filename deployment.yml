@@ -12,3 +12,11 @@ jobs:
    steps:
      - name: run models
        command: dbt run --models @consumption_zone
+
+ -  name: cg_sales_orders_fact_onetime_run
+    targetName: cg-gbq-p 
+    schedule: "00 12 * * *"
+    timeout: 2h30m
+    steps:
+     - name: run models 
+       command: dbt run --models @consumption_zone 
