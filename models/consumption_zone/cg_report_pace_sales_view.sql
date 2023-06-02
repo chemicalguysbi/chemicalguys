@@ -188,11 +188,11 @@ SELECT
 FROM
   -- cg-gbq-p.enterprise_zone.cg_planning_fact co
   {{ ref('cg_planning_fact') }} co
-JOIN
+LEFT OUTER JOIN
   -- cg-gbq-p.consumption_zone.cg_customer_class cc
-  {{ ref('cg_dim_customer_class') }} cc
+  {{ ref('cg_customer_class') }} cc
 ON
-  co.account_name = cc.account_name
+  upper(co.account_name) = upper(cc.account_name)
 GROUP BY
   date(due_date),
   cc.customer_account_id
