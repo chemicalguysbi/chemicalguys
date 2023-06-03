@@ -28,6 +28,8 @@ select distinct
   c.item_dsecription,
   c.item_status_code,
   c.item_type,
+  sc.current_cost as pre_standard_cost,
+  COALESCE(sc.current_cost * a.quantity,0) AS standard_cost,
   current_datetime() as load_date_time
 from
   `cg-gbq-p.staging_zone.sales_force_order_details_view` a
@@ -36,6 +38,12 @@ inner join
 on
   a.order_summary_number = b.order_summary_number
 left join
-  cg-gbq-p.consumption_zone.cg_product_dimension c
+  `cg-gbq-p.consumption_zone.cg_product_dimension` c
 on
   c.item_number = a.product_product_code
+left join 
+  --`cg-gbq-p.staging_zone.standard_cost` sc
+  {{ ref('standard_cost') }} sc
+  on 
+a.product_product_code= sc.item_number
+and sc.organization_code = 'CUSTOM_GOODS_CA'
