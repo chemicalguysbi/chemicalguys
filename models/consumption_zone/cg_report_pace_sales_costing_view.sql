@@ -267,8 +267,9 @@ sum(awaiting_billing_amount) as awaiting_billing_amount,
 sum(planned_budget_amount) as  planned_budget_amount,
 sum(incomplete_inv_amount) as incomplete_inv_amount,
 sum (standard_cost) as standard_cost,
-sum(invoiced_quantity) as invoiced_quantity
-FROM  union_all_cte
+sum(invoiced_quantity) as invoiced_quantity,
+case when sum(standard_cost) = 0 then 0 else sum(invoice_amount) end as invoice_amount_with_cost
+FROM  union_all_cte 
 group by 
 date_key,
 inventory_item_id,
