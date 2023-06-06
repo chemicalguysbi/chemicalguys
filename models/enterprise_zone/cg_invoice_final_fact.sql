@@ -1,8 +1,8 @@
 {{
     config(
-        materialized='incremental',
+        materialized='table',
         unique_key='s_key',
-        tags = 'invoice_final_fact_test'
+        tags = 'cg_invoice_final_fact'
     )
 }}
 --incremental load
@@ -59,47 +59,6 @@ WITH
      {{ ref('invoice_legal_entity') }}
     
     ),
-
-incremental_header AS (
-  SELECT
-    *
-  FROM
-    invo_trans_hdr ith where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    invo_trans_hdr ith))
-    --select count(*) from incremental_header
-    
-    ,
-	increment_line as(
-SELECT
-    *
-  FROM
-    inv_trans_line itl where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    inv_trans_line itl))
-   --select count(*) from  increment_line
-    ,
-	
-	increment_cust_acc as(
-SELECT
-    *
-  FROM
-    cust_acc_mas cam where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    cust_acc_mas cam)),
-	
-increment_inv_leg as(
-SELECT
-    *
-  FROM
-    inv_leg_enti ile where date(_fivetran_synced) >=(SELECT
-    max(date(_fivetran_synced))-3
-  FROM
-    inv_leg_enti ile))	,
-    
   join_cte AS (
   SELECT
   ra_customer_trx_line_extended_amount
