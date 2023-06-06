@@ -1,3 +1,10 @@
+{{
+       config(
+             materialized='view',
+             tags = 'cg_report_pace_sales_costing_view'
+         )
+   }}
+
 WITH union_all_cte AS (
   SELECT
   DATE(request_ship_date) date_key,
@@ -15,11 +22,11 @@ WITH union_all_cte AS (
   item_number as product_product_code,
   'OPEN_ORDERS' as source_key
 FROM
-  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  --{{ ref('cg_sales_orders_inc_fact') }} co
+  --cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  {{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-  cg-gbq-p.consumption_zone.cg_customer_class cc
-  --{{ ref('cg_customer_class') }} cc
+  --cg-gbq-p.consumption_zone.cg_customer_class cc
+  {{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -47,8 +54,8 @@ SELECT
   '0' as product_product_code,
   'INVOICE_FACT' as source_key
 FROM
-   cg-gbq-p.enterprise_zone.cg_invoice_final_fact
-  --{{ ref('cg_invoice_final_fact') }}
+   --cg-gbq-p.enterprise_zone.cg_invoice_final_fact
+  {{ ref('cg_invoice_final_fact') }}
 WHERE
   complete_flag='Y'
 GROUP BY
@@ -73,8 +80,8 @@ SELECT
   '0' product_product_code,
   'INVOICE_COST_FACT' as source_key
 FROM
-  cg-gbq-p.`enterprise_zone.cg_invoice_target_cost`
-  --{{ ref('cg_invoice_target_cost') }}
+  --cg-gbq-p.`enterprise_zone.cg_invoice_target_cost`
+  {{ ref('cg_invoice_target_cost') }}
 WHERE
   complete_flag='Y'
 GROUP BY
@@ -99,8 +106,8 @@ SELECT
   '0' product_product_code ,
   'INCOMPLETE_INVOICE' as source_key
 FROM
-  cg-gbq-p.enterprise_zone.cg_invoice_final_fact
- -- {{ ref('cg_invoice_final_fact') }}
+  --cg-gbq-p.enterprise_zone.cg_invoice_final_fact
+ {{ ref('cg_invoice_final_fact') }}
 WHERE
   complete_flag='N'
 GROUP BY
@@ -125,11 +132,11 @@ SELECT
   item_number as product_product_code,
   'OPEN_ORDERS_SHIPPED' as source_key
 FROM
-  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  --{{ ref('cg_sales_orders_inc_fact') }} co
+  --cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  {{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-  cg-gbq-p.consumption_zone.cg_customer_class cc
-  --{{ ref('cg_customer_class') }} cc
+  --cg-gbq-p.consumption_zone.cg_customer_class cc
+  {{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -157,11 +164,11 @@ SELECT
     item_number as product_product_code,
   'OPEN_ORDERS_AWAIT_BILLING' as source_key
 FROM
-  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  --{{ ref('cg_sales_orders_inc_fact') }} co
+  --cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  {{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-   cg-gbq-p.consumption_zone.cg_customer_class cc
-  --{{ ref('cg_customer_class') }} cc
+   --cg-gbq-p.consumption_zone.cg_customer_class cc
+  {{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -189,11 +196,11 @@ SELECT
   '0' product_product_code,
   'PLANNING DATA' as source_key
 FROM
-  cg-gbq-p.enterprise_zone.cg_planning_fact co
-  --{{ ref('cg_planning_fact') }} co
+  --cg-gbq-p.enterprise_zone.cg_planning_fact co
+  {{ ref('cg_planning_fact') }} co
 LEFT OUTER JOIN
-   cg-gbq-p.consumption_zone.cg_customer_class cc
-  --{{ ref('cg_customer_class') }} cc
+   --cg-gbq-p.consumption_zone.cg_customer_class cc
+  {{ ref('cg_customer_class') }} cc
 ON
   upper(co.account_name) = upper(cc.account_name)
 GROUP BY
@@ -222,8 +229,8 @@ GROUP BY
    product_product_code,
   'WEBSITES DATA' AS source_key
 FROM
-  `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
-  --{{ ref('cg_websites_sales_fact') }}
+  --`cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
+  {{ ref('cg_websites_sales_fact') }}
 GROUP BY
   created_date,
   coalesce(inventory_item_id,0),
@@ -252,8 +259,8 @@ GROUP BY
   'LIGHT SPEED DATA' as source_key
 
  FROM
- `cg-gbq-p.enterprise_zone.dg_sales_fact` 
---{{ ref('dg_sales_fact') }}
+ --`cg-gbq-p.enterprise_zone.dg_sales_fact` 
+{{ ref('dg_sales_fact') }}
 group by 
 date,
 coalesce(inventory_item_id,0),
