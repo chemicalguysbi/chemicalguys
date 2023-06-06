@@ -29,7 +29,9 @@ select distinct
   c.item_status_code,
   c.item_type,
   sc.current_cost as pre_standard_cost,
-  COALESCE(sc.current_cost * a.quantity,0) AS standard_cost,
+--   case when (a.product_product_code like 'VIR%' or a.product_product_code like 'KIT%')
+--   then pretax_total else 
+   COALESCE(sc.current_cost * a.quantity,0) AS standard_cost,
   current_datetime() as load_date_time
 from
   `cg-gbq-p.staging_zone.sales_force_order_details_view` a

@@ -1,10 +1,3 @@
-{{
-       config(
-             materialized='view',
-             tags = 'cg_report_pace_sales_costing_view'
-         )
-   }}
-
 WITH union_all_cte AS (
   SELECT
   DATE(request_ship_date) date_key,
@@ -19,13 +12,14 @@ WITH union_all_cte AS (
   0 incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+  item_number as product_product_code,
   'OPEN_ORDERS' as source_key
 FROM
-  -- cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  {{ ref('cg_sales_orders_inc_fact') }} co
+  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  --{{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-  -- cg-gbq-p.consumption_zone.cg_customer_class cc
-  {{ ref('cg_customer_class') }} cc
+  cg-gbq-p.consumption_zone.cg_customer_class cc
+  --{{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -34,7 +28,8 @@ GROUP BY
   DATE(request_ship_date),
   inventory_item_id,
   cc.customer_account_id,
-  order_number
+  order_number,
+  item_number
 UNION ALL
 SELECT
   DATE(inv_date) date_key,
@@ -49,10 +44,11 @@ SELECT
   0 incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+  '0' as product_product_code,
   'INVOICE_FACT' as source_key
 FROM
-  -- cg-gbq-p.enterprise_zone.cg_invoice_final_fact
-  {{ ref('cg_invoice_final_fact') }}
+   cg-gbq-p.enterprise_zone.cg_invoice_final_fact
+  --{{ ref('cg_invoice_final_fact') }}
 WHERE
   complete_flag='Y'
 GROUP BY
@@ -74,10 +70,11 @@ SELECT
   0 incomplete_inv_amount,
   SUM(standard_cost) standard_cost,
   SUM(quantity) invoiced_quantity,
+  '0' product_product_code,
   'INVOICE_COST_FACT' as source_key
 FROM
-  -- cg-gbq-p.`enterprise_zone.cg_invoice_target_cost`
-  {{ ref('cg_invoice_target_cost') }}
+  cg-gbq-p.`enterprise_zone.cg_invoice_target_cost`
+  --{{ ref('cg_invoice_target_cost') }}
 WHERE
   complete_flag='Y'
 GROUP BY
@@ -99,10 +96,11 @@ SELECT
   sum (inv_total) incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+  '0' product_product_code ,
   'INCOMPLETE_INVOICE' as source_key
 FROM
-  -- cg-gbq-p.enterprise_zone.cg_invoice_final_fact
-  {{ ref('cg_invoice_final_fact') }}
+  cg-gbq-p.enterprise_zone.cg_invoice_final_fact
+ -- {{ ref('cg_invoice_final_fact') }}
 WHERE
   complete_flag='N'
 GROUP BY
@@ -124,13 +122,14 @@ SELECT
   0 incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+  item_number as product_product_code,
   'OPEN_ORDERS_SHIPPED' as source_key
 FROM
-  --cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  {{ ref('cg_sales_orders_inc_fact') }} co
+  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  --{{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-  --cg-gbq-p.consumption_zone.cg_customer_class cc
-  {{ ref('cg_customer_class') }} cc
+  cg-gbq-p.consumption_zone.cg_customer_class cc
+  --{{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -139,7 +138,8 @@ GROUP BY
   DATE(REQUEST_SHIP_DATE),
   inventory_item_id,
   cc.CUSTOMER_ACCOUNT_ID,
-  order_number
+  order_number,
+  item_number
 UNION ALL
 SELECT
   DATE(REQUEST_SHIP_DATE) date_key,
@@ -154,13 +154,14 @@ SELECT
   0 incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+    item_number as product_product_code,
   'OPEN_ORDERS_AWAIT_BILLING' as source_key
 FROM
-  -- cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
-  {{ ref('cg_sales_orders_inc_fact') }} co
+  cg-gbq-p.enterprise_zone.cg_sales_orders_inc_fact co
+  --{{ ref('cg_sales_orders_inc_fact') }} co
 JOIN
-  -- cg-gbq-p.consumption_zone.cg_customer_class cc
-  {{ ref('cg_customer_class') }} cc
+   cg-gbq-p.consumption_zone.cg_customer_class cc
+  --{{ ref('cg_customer_class') }} cc
 ON
   co.account_name = cc.account_name
 WHERE
@@ -169,7 +170,8 @@ GROUP BY
   DATE(REQUEST_SHIP_DATE),
   inventory_item_id,
   cc.customer_account_id,
-  order_number
+  order_number,
+  item_number
 UNION ALL
 SELECT
   date(due_date) date_key,
@@ -184,13 +186,14 @@ SELECT
   0 incomplete_inv_amount,
   0 standard_cost,
   0 invoiced_quantity,
+  '0' product_product_code,
   'PLANNING DATA' as source_key
 FROM
-  -- cg-gbq-p.enterprise_zone.cg_planning_fact co
-  {{ ref('cg_planning_fact') }} co
+  cg-gbq-p.enterprise_zone.cg_planning_fact co
+  --{{ ref('cg_planning_fact') }} co
 LEFT OUTER JOIN
-  -- cg-gbq-p.consumption_zone.cg_customer_class cc
-  {{ ref('cg_customer_class') }} cc
+   cg-gbq-p.consumption_zone.cg_customer_class cc
+  --{{ ref('cg_customer_class') }} cc
 ON
   upper(co.account_name) = upper(cc.account_name)
 GROUP BY
@@ -216,14 +219,16 @@ GROUP BY
   0 AS incomplete_inv_amount,
   sum(standard_cost) AS standard_cost,
   sum(quantity) invoiced_quantity,
+   product_product_code,
   'WEBSITES DATA' AS source_key
 FROM
-  -- `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
-  {{ ref('cg_websites_sales_fact') }}
+  `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
+  --{{ ref('cg_websites_sales_fact') }}
 GROUP BY
   created_date,
   coalesce(inventory_item_id,0),
-  order_summary_number
+  order_summary_number,
+  product_product_code
  union all
  SELECT
   date as date_key,
@@ -243,23 +248,25 @@ GROUP BY
   0 incomplete_inv_amount,
   sum(standard_cost) as  standard_cost,
   sum(qty) as invoiced_quantity,
+  item_number as product_product_code,
   'LIGHT SPEED DATA' as source_key
 
  FROM
---  `cg-gbq-p.enterprise_zone.dg_sales_fact` 
-{{ ref('dg_sales_fact') }}
+ `cg-gbq-p.enterprise_zone.dg_sales_fact` 
+--{{ ref('dg_sales_fact') }}
 group by 
 date,
 coalesce(inventory_item_id,0),
-saleid
+saleid,
+item_number
   )
-
 SELECT 
-md5(concat(date_key,inventory_item_id,customer_account_id,source_number)) as s_key,
+md5(concat(date_key,inventory_item_id,customer_account_id,source_number,product_product_code)) as s_key,
 date_key,
 inventory_item_id,
 customer_account_id,
 source_number,
+product_product_code,
 sum(order_amount) as  order_amount,
 sum(invoice_amount) as invoice_amount,
 sum(shipped_amount) as shipped_amount,
@@ -268,10 +275,13 @@ sum(planned_budget_amount) as  planned_budget_amount,
 sum(incomplete_inv_amount) as incomplete_inv_amount,
 sum (standard_cost) as standard_cost,
 sum(invoiced_quantity) as invoiced_quantity,
-case when sum(standard_cost) = 0 then 0 else sum(invoice_amount) end as invoice_amount_with_cost
+case when (product_product_code like 'VIR%' or product_product_code like 'KIT%')
+then sum(invoice_amount) when
+sum(standard_cost) = 0 then 0 else sum(invoice_amount) end as invoice_amount_with_cost
 FROM  union_all_cte 
 group by 
 date_key,
 inventory_item_id,
 customer_account_id,
-source_number
+source_number,
+product_product_code
