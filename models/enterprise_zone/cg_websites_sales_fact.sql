@@ -1,3 +1,4 @@
+
 {{
        config(
              materialized='table',
@@ -9,12 +10,12 @@ select distinct
   a.order_summary_number,
   a.order_line_number,
   a.status,
-  CAST(RTRIM(LTRIM(a.quantity)) AS INT64) quantity,
+  a.quantity as quantity,
   a.quantity_ordered,
   a.line_subtotal,
   a.distributed_order_adjustments,
   a.line_adjustments,
-  cast(RTRIM(LTRIM(a.pretax_total))as FLOAT64) AS pretax_total,
+a.pretax_total,
   a.product_product_code,
   a._fivetran_synced as details_fivetran_synced,
   date(b.created_date) created_date,
@@ -31,7 +32,7 @@ select distinct
   sc.current_cost as pre_standard_cost,
 --   case when (a.product_product_code like 'VIR%' or a.product_product_code like 'KIT%')
 --   then pretax_total else 
-   COALESCE(sc.current_cost * cast(a.quantity as INT64),0) AS standard_cost,
+   COALESCE(sc.current_cost * a.quantity,0) AS standard_cost,
   current_datetime() as load_date_time
 from
   `cg-gbq-p.staging_zone.sales_force_order_details_view` a
