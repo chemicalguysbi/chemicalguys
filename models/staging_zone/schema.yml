@@ -16,3 +16,4 @@ models:
     - name: sales_orders_party_site
     - name: standard_cost
     - name: customer_sales_fact
+    - name: cg_pace_sop_forecast
