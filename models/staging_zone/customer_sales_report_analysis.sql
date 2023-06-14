@@ -5,91 +5,135 @@
     )
 }}
 
-with cte as (SELECT
-  CASE
-    WHEN sales_in_2021 >0 AND sales_in_2022 = 0 THEN 'LOST_AFTER_2021'
-  
-    WHEN sales_in_2022 > 0 AND sales_in_2021 = 0 THEN "NEW_IN_2022"
-  
-    WHEN sales_in_2022 > 0
-  AND sales_in_2021 > 0 then "REPEATS_FROM_2021" else "2023_REPORT" end as status,
-  case when sales_in_2022 > sales_in_2021  then "SPENDS_MORE_2022"
-  WHEN sales_in_2022 < sales_in_2021 THEN "SPENDS_LESS_2022"  ELSE "2023_REPORT" End as repeat_cx,*
-FROM
-  `cg-gbq-p.lightspeed.z_dg_customer_sales_summarized`)
-
---select distinct status from cte where repeat_cx in ('SPENDS_MORE','SPENDS_LESS')
-
--- ,final_cte as (
---   select status,count(*) as customer_unique, sum(sales_in_2021)sales_in_2021,sum(sales_in_2022)sales_in_2022 from cte
---   group by status
--- union all
--- select 
--- repeat_cx as status,count(*) as customer_unique, sum(sales_in_2021)sales_in_2021,sum(sales_in_2022)sales_in_2022 
--- from cte
---   group by repeat_cx)
---select * from final_cte where status <> '2023_REPORT'
-
-
-,final_cte AS (
-  SELECT store,
-    status,phone_number,sum(sales_in_2021)sales_in_2021, sum(no_of_trans_2021)no_of_trans_2021, sum(no_of_items_2021)no_of_items_2021, sum(sales_in_2022)sales_in_2022, sum(no_of_trans_2022)no_of_trans_2022, sum(no_of_items_2022)no_of_items_2022, sum(sales_in_2023)sales_in_2023, sum(no_of_trans_2023)no_of_trans_2023, sum(no_of_items_2023)no_of_items_2023,
-    COUNT(*) unique_cx,
+WITH
+  cte AS (
+  SELECT
     CASE
-      WHEN status = 'LOST_AFTER_2021' THEN SUM(sales_in_2021)
-      WHEN status = 'NEW_IN_2022' THEN SUM(sales_in_2022)
-      WHEN status = 'REPEATS_FROM_2021' THEN SUM(sales_in_2022) --
-      -- WHEN repeat_cx = 'SPENDS_MORE_2022' THEN SUM(sales_in_2022) --
-      -- WHEN repeat_cx = 'SPENDS_LESS_2022' THEN SUM(SALES_IN_2022)
+      WHEN sales_in_2021 >0 AND sales_in_2022 = 0 THEN 'LOST_AFTER_2021'
+      WHEN sales_in_2022 > 0
+    AND sales_in_2021 = 0 THEN "NEW_IN_2022"
+      WHEN sales_in_2022 > 0 AND sales_in_2021 > 0 THEN "REPEATS_FROM_2021"
+    ELSE
+    "2023_REPORT"
   END
-    AS TOTAL_SALES,
+    AS status,
     CASE
-      WHEN status = 'LOST_AFTER_2021' THEN SUM(no_of_trans_2021)
-      WHEN status = 'NEW_IN_2022' THEN SUM(no_of_trans_2022)
-      WHEN status = 'REPEATS_FROM_2021' THEN SUM(no_of_trans_2022)
+      WHEN sales_in_2022 > sales_in_2021 AND sales_in_2021 <> 0 AND sales_in_2022 <> 0 THEN "SPENDS_MORE_2022"
+      WHEN sales_in_2022 < sales_in_2021
+    AND sales_in_2021 <> 0
+    AND sales_in_2022 <> 0 THEN "SPENDS_LESS_2022"
+    ELSE
+    "2023_REPORT"
   END
-    AS TOTAL_transaction,
-    CASE
-      WHEN status = 'LOST_AFTER_2021' THEN SUM(no_of_items_2021)
-      WHEN status = 'NEW_IN_2022' THEN SUM(no_of_items_2022)
-      WHEN status = 'REPEATS_FROM_2021' THEN SUM(no_of_items_2022)
-  END
-    AS TOTAL_items,
+    AS repeat_cx,
+    *
+  FROM
+    `cg-gbq-p.lightspeed.z_dg_customer_sales_summarized`),
+  distinct_count_status AS (
+  SELECT
+    COUNT(DISTINCT phone_number) AS count_cx,
+    status
   FROM
     cte
   GROUP BY
-    status,phone_number,store
+    status ),
+  distinct_count_repeat_cx AS (
+  SELECT
+    COUNT(DISTINCT phone_number) AS count_cx,
+    repeat_cx
+  FROM
+    cte
+  GROUP BY
+    repeat_cx ),
+  final_cte AS (
+  SELECT
+    store,
+    a.status,
+    phone_number,
+    SUM(sales_in_2021)sales_in_2021,
+    SUM(no_of_trans_2021)no_of_trans_2021,
+    SUM(no_of_items_2021)no_of_items_2021,
+    SUM(sales_in_2022)sales_in_2022,
+    SUM(no_of_trans_2022)no_of_trans_2022,
+    SUM(no_of_items_2022)no_of_items_2022,
+    SUM(sales_in_2023)sales_in_2023,
+    SUM(no_of_trans_2023)no_of_trans_2023,
+    SUM(no_of_items_2023)no_of_items_2023,
+    SUM(count_cx)unique_customers,
+    COUNT(*) unique_cx,
+    CASE
+      WHEN a.status = 'LOST_AFTER_2021' THEN SUM(sales_in_2021)
+      WHEN a.status = 'NEW_IN_2022' THEN SUM(sales_in_2022)
+      WHEN a.status = 'REPEATS_FROM_2021' THEN SUM(sales_in_2022)
+  END
+    AS total_sales,
+    CASE
+      WHEN a.status = 'LOST_AFTER_2021' THEN SUM(no_of_trans_2021)
+      WHEN a.status = 'NEW_IN_2022' THEN SUM(no_of_trans_2022)
+      WHEN a.status = 'REPEATS_FROM_2021' THEN SUM(no_of_trans_2022)
+  END
+    AS total_transaction,
+    CASE
+      WHEN a.status = 'LOST_AFTER_2021' THEN SUM(no_of_items_2021)
+      WHEN a.status = 'NEW_IN_2022' THEN SUM(no_of_items_2022)
+      WHEN a.status = 'REPEATS_FROM_2021' THEN SUM(no_of_items_2022)
+  END
+    AS total_items,
+  FROM
+    cte a
+  LEFT JOIN
+    distinct_count_status dcs
+  ON
+    a.status = dcs.status
+  GROUP BY
+    status,
+    phone_number,
+    store
   UNION ALL
-  SELECT store,
-    repeat_cx AS status,phone_number,sum(sales_in_2021)sales_in_2021, sum(no_of_trans_2021)no_of_trans_2021, sum(no_of_items_2021)no_of_items_2021, sum(sales_in_2022)sales_in_2022, sum(no_of_trans_2022)no_of_trans_2022, sum(no_of_items_2022)no_of_items_2022, sum(sales_in_2023)sales_in_2023, sum(no_of_trans_2023)no_of_trans_2023, sum(no_of_items_2023)no_of_items_2023,
+  SELECT
+    store,
+    b.repeat_cx AS status,
+    phone_number,
+    SUM(sales_in_2021)sales_in_2021,
+    SUM(no_of_trans_2021)no_of_trans_2021,
+    SUM(no_of_items_2021)no_of_items_2021,
+    SUM(sales_in_2022)sales_in_2022,
+    SUM(no_of_trans_2022)no_of_trans_2022,
+    SUM(no_of_items_2022)no_of_items_2022,
+    SUM(sales_in_2023)sales_in_2023,
+    SUM(no_of_trans_2023)no_of_trans_2023,
+    SUM(no_of_items_2023)no_of_items_2023,
+    SUM(count_cx)unique_customers,
     COUNT(*) unique_cx,
     CASE
-      WHEN repeat_cx = 'SPENDS_MORE_2022' THEN SUM(sales_in_2022)
-      WHEN repeat_cx = 'SPENDS_LESS_2022' THEN SUM(SALES_IN_2022)
+      WHEN b.repeat_cx = 'SPENDS_MORE_2022' THEN SUM(sales_in_2022)
+      WHEN b.repeat_cx = 'SPENDS_LESS_2022' THEN SUM(SALES_IN_2022)
   END
-    AS TOTAL_SALES,
+    AS total_sales,
     CASE
-      WHEN repeat_cx = 'SPENDS_MORE_2022' THEN SUM(no_of_trans_2022)
-      WHEN repeat_cx = 'SPENDS_LESS_2022' THEN SUM(no_of_trans_2022)
+      WHEN b.repeat_cx = 'SPENDS_MORE_2022' THEN SUM(no_of_trans_2022)
+      WHEN b.repeat_cx = 'SPENDS_LESS_2022' THEN SUM(no_of_trans_2022)
   END
-    AS TOTAL_transaction,
+    AS total_transaction,
     CASE
-      WHEN repeat_cx = 'SPENDS_MORE_2022' THEN SUM(no_of_items_2022)
-      WHEN repeat_cx = 'SPENDS_LESS_2022' THEN SUM(no_of_items_2022)
+      WHEN b.repeat_cx = 'SPENDS_MORE_2022' THEN SUM(no_of_items_2022)
+      WHEN b.repeat_cx = 'SPENDS_LESS_2022' THEN SUM(no_of_items_2022)
   END
-    AS TOTAL_items
+    AS total_items
   FROM
-    cte
+    cte b
+  LEFT JOIN
+    distinct_count_repeat_cx dcr
+  ON
+    b.repeat_cx = dcr.repeat_cx
   GROUP BY
-    repeat_cx,phone_number,store)
+    b.repeat_cx,
+    phone_number,
+    store)
 SELECT
-  *,
-  case when unique_cx = 0 then 0 else total_sales/unique_cx end AS cutomer_per,
-  case when total_transaction = 0 then 0 else total_sales/total_transaction end AS transaction_per,
-  case when total_items = 0 then 0 else total_sales/total_items end  AS item_per,case when sales_in_2021 >0  and   sales_in_2021 > 0 and sales_in_2022 > sales_in_2021 then sales_in_2021 end as sales_in_2021_2022
+ *
 FROM
   final_cte
 WHERE
   status <> '2023_REPORT'
-
 

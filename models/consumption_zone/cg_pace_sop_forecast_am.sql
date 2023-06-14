@@ -6,121 +6,113 @@
    }}
 
 
-SELECT
-  a.*,
-  b.no_of AS count_of_category,
-  CASE
-    WHEN a.main_class_category = 'Wholesale Distribution' THEN a.amount
-  ELSE
-  b.calculated_amount
-END
-  AS calculated_amount
-FROM (
+WITH
+  planning_data_cte AS (
   SELECT
-    b.main_class_category,
-    coalesce (a.main_class_sub_category,
-      b.main_class_sub_category)main_class_sub_category,
+    DISTINCT b.main_class_category,
+    b.main_class_sub_category,
+    main_class,
+    due_date,
     amount,
-    main_date
-  FROM
-    --`cg-gbq-p.staging_zone.cg_pace_sop_forecast` b
-    {{ ref('cg_pace_sop_forecast') }} b
-  LEFT JOIN (
-    SELECT
-      DISTINCT main_class_category,
-      COALESCE(main_class_sub_category,main_class) main_class_sub_category
-    FROM
-      --`cg-gbq-p.consumption_zone.cg_customer_class`
-      {{ ref('cg_customer_class') }}
-    WHERE
-      main_class_category <>'Wholesale Distribution'
-      AND (main_class_sub_category IN ('Fee',
-          'Owned Store Sales',
-          'Sales To Franchise',
-          'Amazon Canada',
-          'Amazon US',
-          'eBay',
-          'AUS Website',
-          'UK Website',
-          'CAN Website',
-          'US Websites')
-        OR main_class IN ('Fee',
-          'Owned Store Sales',
-          'Sales To Franchise',
-          'Amazon Canada',
-          'Amazon US',
-          'eBay',
-          'AUS Website',
-          'UK Website',
-          'CAN Website',
-          'US Websites'))
-    ORDER BY
-      1,
-      2)a
-  ON
-    b.main_class_category = a.main_class_category
-  ORDER BY
-    1,
-    4 ASC)a
-LEFT JOIN (
-  SELECT
-    main_class_category,
-    COUNT(*) AS no_of,
-    MAX(amount)final_amount,
-    MAX(amount)/COUNT(*) AS calculated_amount,
-    main_date
+    customer_account_id
   FROM (
     SELECT
+      a.*,
+      b.account_name AS cc_account_name,
       b.main_class_category,
-      coalesce (a.main_class_sub_category,
-        b.main_class_sub_category)main_class_sub_category,
-      amount,
-      main_date
+      b.main_class_sub_category,
+      b.customer_account_id
     FROM
-      --`cg-gbq-p.staging_zone.cg_pace_sop_forecast` b
-         {{ ref('cg_pace_sop_forecast') }} b
-    LEFT JOIN (
-      SELECT
-        DISTINCT main_class_category,
-        COALESCE(main_class_sub_category,main_class) main_class_sub_category
-      FROM
-        --`cg-gbq-p.consumption_zone.cg_customer_class`
-        {{ ref('cg_customer_class') }}
-      WHERE
-        main_class_category <>'Wholesale Distribution'
-        AND (main_class_sub_category IN ('Fee',
-            'Owned Store Sales',
-            'Sales To Franchise',
-            'Amazon Canada',
-            'Amazon US',
-            'eBay',
-            'AUS Website',
-            'UK Website',
-            'CAN Website',
-            'US Websites')
-          OR main_class IN ('Fee',
-            'Owned Store Sales',
-            'Sales To Franchise',
-            'Amazon Canada',
-            'Amazon US',
-            'eBay',
-            'AUS Website',
-            'UK Website',
-            'CAN Website',
-            'US Websites'))
-      ORDER BY
-        1,
-        2)a
+      --`cg-gbq-p.enterprise_zone.cg_planning_fact` a
+
+      {{ ref('cg_planning_fact') }} a
+    LEFT JOIN
+      `consumption_zone.cg_customer_class` b
     ON
-      b.main_class_category = a.main_class_category
-    ORDER BY
-      1,
-      4 ASC)
-  GROUP BY
-    main_class_category,
-    main_date)b
-ON
-  a.main_class_category = b.main_class_category
-  AND a.main_date = b.main_date
-ORDER BY
-  1
+      UPPER(a.account_name) = UPPER(b.account_name) 
+      ) b
+  WHERE
+    main_class_category IS NOT NULL ),
+  detail_cte AS (
+  SELECT
+    fc.*,
+    pd.amount AS planned_amount,
+    pdc.amount AS planned_amount_wd,
+    plan_amount,
+    plan_amount_wd,
+    pd.customer_account_id,
+    pdc.customer_account_id AS cust_ac_id
+  FROM
+   -- `cg-gbq-p.staging_zone.cg_pace_sop_forecast` fc
+    {{ ref('cg_pace_sop_forecast') }} fc
+  LEFT JOIN
+    planning_data_cte pd
+  ON
+    fc.main_class_category = pd.main_class_category
+    AND pd.main_class_category <> 'Wholesale Distribution'
+    AND main_date = due_date
+  LEFT JOIN
+    planning_data_cte pdc
+  ON
+    fc.main_class_category = pdc.main_class_category
+    AND fc.main_class_sub_category = pdc.main_class_sub_category
+    AND main_date = pdc.due_date
+    AND pdc.main_class_category = 'Wholesale Distribution'
+  LEFT JOIN (
+    SELECT
+      SUM(amount)plan_amount,
+      main_class_category,
+      due_date
+    FROM
+      planning_data_cte
+    WHERE
+      main_class_category <> 'Wholesale Distribution'
+    GROUP BY
+      2,
+      3) a
+  ON
+    fc.main_class_category = a.main_class_category
+    AND main_date = a.due_date
+  LEFT JOIN (
+    SELECT
+      SUM(amount)plan_amount_wd,
+      main_class_category,
+      main_class_sub_category,
+      due_date
+    FROM
+      planning_data_cte
+    WHERE
+      main_class_category = 'Wholesale Distribution'
+    GROUP BY
+      2,
+      3,
+      4) b
+  ON
+    fc.main_class_category = b.main_class_category
+    AND fc.main_class_sub_category = b.main_class_sub_category
+    AND main_date = b.due_date ),
+  columunar_data_cte AS (
+  SELECT
+    main_class_Category,
+    main_class_sub_Category,
+    amount,
+    main_Date,
+    COALESCE(planned_amount,planned_amount_wd) AS planned_amount_coel,
+    planned_amount,
+    planned_amount_wd,
+    COALESCE(plan_amount,plan_amount_wd) AS plan_amount,
+    COALESCE(customer_account_id,cust_ac_id)customer_account_id,
+  FROM
+    detail_cte )
+SELECT
+  main_class_Category,
+  main_class_sub_Category,
+  customer_account_id,
+  amount,
+  main_Date,
+  planned_amount_coel AS total_planning_amount,
+  plan_amount,
+  (planned_amount_coel/plan_amount) *100 AS percentage_calculation,
+  (amount*((planned_amount_coel/plan_amount) *100))/100 AS sop_amount
+FROM
+  columunar_data_cte
