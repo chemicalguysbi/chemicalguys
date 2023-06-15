@@ -175,7 +175,7 @@ WITH
     0 AS no_of_trans_2023,
     0 AS no_of_items_2023,
     CASE
-      WHEN per_2021.sales_in_2021 > d.threshold_in_2021 THEN 1
+      WHEN per_2021.sales_in_2021 >= d.threshold_in_2021 THEN 1
     ELSE
     0
   END
@@ -208,7 +208,7 @@ WITH
     0 AS no_of_items_2023,
     0 AS no_of_cx_2021,
     CASE
-      WHEN per_2022.sales_in_2022 > d.threshold_in_2022 THEN 1
+      WHEN per_2022.sales_in_2022 >= d.threshold_in_2022 THEN 1
     ELSE
     0
   END
@@ -241,7 +241,7 @@ WITH
     0 AS no_of_cx_2021,
     0 AS no_of_cx_2022,
     CASE
-      WHEN per_2023.sales_in_2023 > d.threshold_in_2023 THEN 1
+      WHEN per_2023.sales_in_2023 >= d.threshold_in_2023 THEN 1
     ELSE
     0
   END
