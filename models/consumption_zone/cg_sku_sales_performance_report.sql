@@ -1,7 +1,6 @@
-
 {{
        config(
-             materialized='table',
+             materialized='view',
              tags = 'cg_sku_sales_performance_report',
          )
 }}
@@ -15,7 +14,8 @@ WITH
     a.INVENTORY_ITEM_ID AS item_inven_id,
     MAX(std_cost) AS standard_cost,
     a.ATTRIBUTE8 AS status,
-    a.ATTRIBUTE9 AS category
+    a.ATTRIBUTE9 AS category,
+    ORGANIZATION_CODE
   FROM
     `cg-gbq-p.oracle_nets.item_master` a
   CROSS JOIN (
@@ -34,24 +34,27 @@ WITH
     4,
     3,
     6,
-    7 ),
+    7,
+    8 ),
   forcast_fact_joined_cte AS (
   SELECT
-    date_key,
-    inv_amount,
-    inv_amount/coalesce (b.invoiced_sales_units,
-      0) AS avg_invoice_price,
+    a.date_key,
+    COALESCE(inv_amount,0)inv_amount,
+    COALESCE(inv_amount/coalesce (b.invoiced_sales_units,
+        0),0) AS avg_invoice_price,
     coalesce (b.invoiced_sales_units,
       0)invoiced_sales_units,
-    fg_forcast_Sales,
+    COALESCE(fg_forcast_Sales,0)fg_forcast_Sales,
     COALESCE(qty,0) AS qty_forcast,
     --a.inventory_item_id,
     SKU,
     DESCRIPTION,
     item_inven_id,
-    standard_cost,
+    a.ORGANIZATION_CODE,
+    COALESCE(standard_cost,0)standard_cost,
     status,
-    category
+    category,
+    COALESCE(QOH,0) AS oracle_inventory
   FROM
     date_item_cte a
   LEFT JOIN (
@@ -61,8 +64,8 @@ WITH
       SUBSTR(CAST(inv_date AS string),0,7) AS yyyy_mm,
       COUNT(a.inventory_item_id) AS invoiced_sales_units,
     FROM
-     -- `cg-gbq-p.enterprise_zone.cg_invoice_final_fact` 
-       {{ ref('cg_invoice_final_fact') }} a
+      --`cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
+        {{ ref('cg_invoice_final_fact') }} a
     WHERE
       DATE(inv_date)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
               FROM
@@ -81,8 +84,8 @@ WITH
       SUBSTR(CAST(DATE(USING_ASSEMBLY_DEMAND_DATE) AS string),0,7) yyyy_mm,
       COUNT(a.item_number)qty
     FROM
-     -- `cg-gbq-p.oracle_nets.demand_forecast` 
-      {{ ref('cg_demand_forcast') }} a
+      --`cg-gbq-p.oracle_nets.demand_forecast` a 
+       {{ ref('cg_demand_forcast') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_product_dimension` b
     ON
@@ -97,19 +100,61 @@ WITH
       inventory_item_id)c
   ON
     a.date_key = c.yyyy_mm
-    AND CAST(a.item_inven_id AS int64) = c.inventory_item_id)
+    AND CAST(a.item_inven_id AS int64) = c.inventory_item_id
+  LEFT JOIN (
+    SELECT
+      ORGANIZATION_CODE,
+      INVENTORY_ITEM_ID,
+      ITEM_NUMBER,
+      MAX(QOH)QOH,
+      SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
+    FROM
+      --`cg-gbq-p.oracle_nets.inventory_on_hand` a
+      {{ ref('cg_inventory_on_hand') }} a
+    LEFT JOIN
+      `cg-gbq-p.consumption_zone.cg_date_dimension` b
+    ON
+      CAST(a.WEEK AS string) = b.week_in_year
+      AND A.YEAR = b.year_number
+      AND DATE(date_key)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
+              FROM
+                DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
+      AND DATE(date_key) <= current_date
+    GROUP BY
+      1,
+      2,
+      3,
+      5)d
+  ON
+    a.date_key = d.yyyy_mm
+    AND CAST(a.item_inven_id AS int64) = d.inventory_item_id
+    AND a.ORGANIZATION_CODE = d.ORGANIZATION_CODE )
 SELECT
   sku,
   description,
   item_inven_id,
   status,
   category,
+  --ORGANIZATION_CODE,
+  SUM(oracle_inventory)oracle_inventory,
   date_key,
-  inv_amount,
-  avg_invoice_price,
-  invoiced_sales_units,
-  fg_forcast_Sales,
-  qty_forcast,
-  standard_cost
+  SUM(inv_amount)inv_amount,
+  SUM(avg_invoice_price)avg_invoice_price,
+  SUM(invoiced_sales_units)invoiced_sales_units,
+  SUM(fg_forcast_Sales)fg_forcast_Sales,
+  SUM(qty_forcast)qty_forcast,
+  SUM(standard_cost)standard_cost
 FROM
-  forcast_fact_joined_cte
+  forcast_fact_joined_cte --
+--WHERE
+  -- item_inven_id = 300000577133638.0 --
+  --AND status = 'Forecast Demand'
+GROUP BY
+  1,
+  2,
+  3,
+  4,
+  5,
+  7
+ORDER BY
+  7 desc

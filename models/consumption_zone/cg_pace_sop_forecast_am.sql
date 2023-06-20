@@ -1,6 +1,6 @@
 {{
        config(
-             materialized='table',
+             materialized='view',
              tags = 'cg_pace_sop_forecast_am'
          )
    }}
