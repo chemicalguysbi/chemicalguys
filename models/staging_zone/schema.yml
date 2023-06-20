@@ -17,3 +17,4 @@ models:
     - name: standard_cost
     - name: customer_sales_fact
     - name: cg_pace_sop_forecast
+    - name: cg_demand_forcast
