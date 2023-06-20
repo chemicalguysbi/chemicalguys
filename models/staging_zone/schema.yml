@@ -18,3 +18,4 @@ models:
     - name: customer_sales_fact
     - name: cg_pace_sop_forecast
     - name: cg_demand_forcast
+    - name: cg_inventory_on_hand
