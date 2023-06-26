@@ -224,7 +224,36 @@ GROUP BY
   created_date,
   coalesce(inventory_item_id,0),
   order_summary_number
+ union all
+ SELECT
+  date as date_key,
+  coalesce(inventory_item_id,0) inventory_item_id,
+  1423 as customer_account_id,
+  --instead of cross join hard coded OWNED STORE SALES customer_id present in cg_customer_class table
+  cast(saleid as string) as source_number,
+  ROUND(case when substring(cast(date as string),1,7) = substring(cast(current_date as string),1,7) 
+  then
+  sum(amt)/EXTRACT(DAY FROM current_date - 1 ) *
+(extract(day from  last_day(current_date)) - extract(day FROM current_date - 1 )) else 0 end ,2)
+ order_amount,
+  sum(amt) invoice_amount,
+  0 shipped_amount,
+  0 awaiting_billing_amount,
+  0 planned_budget_amount,
+  0 incomplete_inv_amount,
+  0 standard_cost,
+  sum(qty) as invoiced_quantity,
+  'LIGHT SPEED DATA' as source_key
+
+ FROM
+--  `cg-gbq-p.enterprise_zone.dg_sales_fact` 
+{{ ref('dg_sales_fact') }}
+group by 
+date,
+coalesce(inventory_item_id,0),
+saleid
   )
+
 SELECT 
 md5(concat(date_key,inventory_item_id,customer_account_id,source_number,source_key)) as s_key,
 date_key,
