@@ -1,7 +1,7 @@
 {{
        config(
              materialized='view',
-             tags = 'cg_sku_sales_performance_report',
+             tags = 'sku_dummy_report.sql',
          )
 }}
 
@@ -140,7 +140,7 @@ SELECT
   item_inven_id,
   status,
   category,
-  ORGANIZATION_CODE as organization_code,
+  ORGANIZATION_CODE,
   SUM(oracle_inventory)oracle_inventory,
   date_key,
   SUM(inv_amount)inv_amount,
@@ -150,7 +150,10 @@ SELECT
   SUM(qty_forcast)qty_forcast,
   SUM(standard_cost)standard_cost
 FROM
-  forcast_fact_joined_cte 
+  forcast_fact_joined_cte --
+--WHERE
+  -- item_inven_id = 300000577133638.0 --
+  --AND status = 'Forecast Demand'
 GROUP BY
   1,
   2,
@@ -158,3 +161,6 @@ GROUP BY
   4,
   5,
   6,8
+  --having item_inven_id = 100000000458119
+-- ORDER BY 
+--   7 desc
