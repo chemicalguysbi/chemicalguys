@@ -28,11 +28,8 @@ WITH
               FROM
                 DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
       AND DATE(date_key) <= current_date)
-<<<<<<< HEAD
-      WHERE upper(CLASS) = 'START QOH'
-=======
       WHERE UPPER(CLASS) = 'START QOH'
->>>>>>> e8577480ba7c1b803f1f3bb4be6fda656167472c
+
   GROUP BY
     1,
     2,
