@@ -28,6 +28,7 @@ WITH
               FROM
                 DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
       AND DATE(date_key) <= current_date)
+      WHERE CLASS = 'Start QOH'
   GROUP BY
     1,
     2,
