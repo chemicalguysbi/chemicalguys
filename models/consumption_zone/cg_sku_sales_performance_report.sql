@@ -64,7 +64,7 @@ WITH
       SUM(inv_total) AS inv_amount,
       a.inventory_item_id,
       SUBSTR(CAST(inv_date AS string),0,7) AS yyyy_mm,
-      COUNT(a.inventory_item_id) AS invoiced_sales_units,
+      sum(quantity) AS invoiced_sales_units,
     FROM
      -- `cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
         {{ ref('cg_invoice_final_fact') }} a

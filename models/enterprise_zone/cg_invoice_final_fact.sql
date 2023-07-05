@@ -34,7 +34,8 @@ WITH
     ra_customer_trx_line_customer_trx_id , 
     ra_customer_trx_line_extended_amount, 
     ra_customer_trx_line_inventory_item_id AS INVENTORY_ITEM_ID,
-    _fivetran_synced
+    _fivetran_synced,
+    ra_customer_trx_line_quantity_invoiced as quantity
   FROM
      {{ ref('invoice_transaction_line') }} 
     
@@ -75,7 +76,8 @@ WITH
   inv_date,
   inv_number,
   COALESCE(inventory_item_id,0)inventory_item_id,
-  0 as open_balance
+  0 as open_balance,
+  quantity
   FROM
     invo_trans_hdr ith
   INNER JOIN
@@ -109,7 +111,8 @@ SELECT
   inv_date,
   inv_number,
   inventory_item_id,
-  open_balance
+  open_balance,
+  quantity
 FROM
   JOIN_CTE
 
@@ -125,7 +128,8 @@ GROUP BY
   inv_date,
  inv_number,
   inventory_item_id,
-  open_balance
+  open_balance,
+  quantity
 ORDER BY
   inv_date,
   account_name,
