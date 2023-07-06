@@ -20,3 +20,12 @@ jobs:
     steps:
      - name: run models 
        command: dbt run --models @consumption_zone 
+
+    
+ -  name: customer_year_wise_monthly_run
+    targetName: cg-gbq-p 
+    schedule: "0 0 1 * *"
+    timeout: 2h30m
+    steps:
+     - name: run models 
+       command: dbt run --models customer_year_wise_lastmonth_report
