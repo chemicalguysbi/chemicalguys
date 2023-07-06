@@ -5,8 +5,6 @@
     )
 }}
 
-insert into `cg-gbq-p.staging_zone.customer_year_wise_report_abc`
-select * from (
 WITH
   year_wise_cx_report AS (
   SELECT store,
@@ -21,7 +19,8 @@ WITH
     `cg-gbq-p.lightspeed.z_dg_customer_sales`
   GROUP BY
     1,
-    2,3)
+    2,3),
+overall_year_report as (
 SELECT store,
   year,
   phone_number,
@@ -45,3 +44,14 @@ SELECT store,
     1,2,3
   ORDER BY
     year desc)
+
+    ,output_check as (
+select a.*,coalesce(b.repeat_customer,0) repeat_customer from overall_year_report a
+left join
+(SELECT substring(status,14)status,count(unique_customer_by_store)repeat_customer FROM `cg-gbq-p.consumption_zone.customer_sales_report_analysis` 
+where status like 'REPEAT%'
+group by 1) b
+on 
+a.year = cast(cast(b.status as int64)+1 as string))
+select *
+ from output_check
