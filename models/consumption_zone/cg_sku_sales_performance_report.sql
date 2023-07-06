@@ -5,6 +5,7 @@
          )
 }}
 
+
 WITH
   date_item_cte AS (
   SELECT

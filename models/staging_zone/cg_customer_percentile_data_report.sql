@@ -279,7 +279,10 @@ SELECT
   MAX(total_cx_in_2022)total_cx_in_2022,
   MAX(total_cx_in_2023)total_cx_in_2023,
   MAX(repeat_customers)rep_cx_from_2021,
-  MAX(total_repeat_customers)total_rep_cx_from_2021
+  MAX(total_repeat_customers)total_rep_cx_from_2021,
+  max(case when sales_in_2021 <>0 then substring(percentage,9) else '0' end) as percentage_2021,
+max(case when sales_in_2022 <>0 then substring(percentage,9) else '0' end) as percentage_2022,
+max(case when sales_in_2023 <>0 then substring(percentage,9) else '0' end) as percentage_2023 ,
 FROM
   detail_cte a
 CROSS JOIN (

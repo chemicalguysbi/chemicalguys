@@ -5,7 +5,8 @@
     )
 }}
 
-
+insert into `cg-gbq-p.staging_zone.customer_year_wise_report_abc`
+select * from (
 WITH
   year_wise_cx_report AS (
   SELECT store,
@@ -43,4 +44,4 @@ SELECT store,
   GROUP BY
     1,2,3
   ORDER BY
-    year desc
+    year desc)
