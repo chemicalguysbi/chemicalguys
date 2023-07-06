@@ -31,3 +31,4 @@ sources:
       - name: cg_dim_customer_class
       - name: cg_report_pace_sales
       - name: cg_report_pace_sales_view
+      - name: customer_year_wise_report
