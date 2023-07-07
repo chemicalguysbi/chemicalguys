@@ -45,13 +45,16 @@ SELECT store,
   ORDER BY
     year desc)
 
-    ,output_check as (
-select a.*,coalesce(b.repeat_customer,0) repeat_customer from overall_year_report a
+ select a.*,coalesce(b.repeat_customer,0) repeat_customer,c.total_unique_customers_year_chg as repeat_unique_customers from overall_year_report a
 left join
 (SELECT substring(status,14)status,count(unique_customer_by_store)repeat_customer FROM `cg-gbq-p.consumption_zone.customer_sales_report_analysis` 
 where status like 'REPEAT%'
 group by 1) b
 on 
-a.year = cast(cast(b.status as int64)+1 as string))
-select *
- from output_check
+a.year = cast(cast(b.status as int64)+1 as string)
+left join 
+(
+select year,count(total_unique_customers)total_unique_customers_year_chg from overall_year_report
+    group by 1)c
+on 
+a.year = cast(cast(c.year as int64)+1 as string) 

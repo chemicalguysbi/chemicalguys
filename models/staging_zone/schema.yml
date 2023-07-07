@@ -19,3 +19,5 @@ models:
     - name: cg_pace_sop_forecast
     - name: cg_demand_forcast
     - name: cg_inventory_on_hand
+    - name: cg_dependent_demand
+    - name: cg_item_master
