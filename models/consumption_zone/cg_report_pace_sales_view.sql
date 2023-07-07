@@ -201,14 +201,19 @@ GROUP BY
   SELECT
   created_date AS date_key,
   coalesce(inventory_item_id,0) inventory_item_id,
-  1424 AS customer_account_id,
+  1424 AS customer_account_id,  --TIMESTAMP(DATETIME(_modified,'America/Los_Angeles'))
   --instead of cross join hard coded US WEBSITES customer_id present in cg_customer_class table
   order_summary_number AS source_number,
-  case when substring(cast(created_date as string),1,7) = substring(cast(current_date as string),1,7) 
-  then
-  ROUND(sum(Pretax_Total)/EXTRACT(DAY FROM current_date - 1 ),2) *
-(extract(day from  last_day(current_date)) - extract(day FROM current_date - 1 )) else 0 end 
- order_amount,
+  CASE
+    WHEN 
+    SUBSTRING(CAST(created_date AS string),1,7) = SUBSTRING(CAST(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))) AS string),1,7) 
+    THEN
+     ROUND(SUM(Pretax_Total)/EXTRACT(DAY FROM DATETIME_SUB(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))),INTERVAL 1 day) ),2) 
+* (EXTRACT(day FROM LAST_DAY(DATETIME(CURRENT_DATETIME('America/Los_Angeles')))) - EXTRACT(DAY FROM DATETIME_SUB(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))),INTERVAL 1 day)))
+  ELSE
+  0
+END
+  order_amount,
   SUM(Pretax_Total) AS invoice_amount,
   0 shipped_amount,
   0 AS awaiting_billing_amount,
@@ -218,23 +223,24 @@ GROUP BY
   sum(quantity) invoiced_quantity,
   'WEBSITES DATA' AS source_key
 FROM
-  -- `cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
+  --`cg-gbq-p.enterprise_zone.cg_websites_sales_fact`
   {{ ref('cg_websites_sales_fact') }}
 GROUP BY
   created_date,
   coalesce(inventory_item_id,0),
   order_summary_number
  union all
- SELECT
+   SELECT
   date as date_key,
-  coalesce(inventory_item_id,0) inventory_item_id,
+  coalesce(inventory_item_id,0) inventory_item_id,  --TIMESTAMP(DATETIME(current_date,'America/Los_Angeles'))
   1423 as customer_account_id,
   --instead of cross join hard coded OWNED STORE SALES customer_id present in cg_customer_class table
   cast(saleid as string) as source_number,
-  ROUND(case when substring(cast(date as string),1,7) = substring(cast(current_date as string),1,7) 
+  ROUND(case when substring(cast(date as string),1,7) = substring(cast(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))) as string),1,7) 
   then
-  sum(amt)/EXTRACT(DAY FROM current_date - 1 ) *
-(extract(day from  last_day(current_date)) - extract(day FROM current_date - 1 )) else 0 end ,2)
+  sum(amt)/EXTRACT(DAY FROM DATETIME_SUB(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))),INTERVAL 1 day) ) *
+(EXTRACT(day FROM LAST_DAY(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))) - 
+EXTRACT(DAY FROM DATETIME_SUB(TIMESTAMP(DATETIME(CURRENT_DATETIME('America/Los_Angeles'))),INTERVAL 1 day) ))) else 0 end ,2)
  order_amount,
   sum(amt) invoice_amount,
   0 shipped_amount,
@@ -246,7 +252,7 @@ GROUP BY
   'LIGHT SPEED DATA' as source_key
 
  FROM
---  `cg-gbq-p.enterprise_zone.dg_sales_fact` 
+  --`cg-gbq-p.enterprise_zone.dg_sales_fact` 
 {{ ref('dg_sales_fact') }}
 group by 
 date,

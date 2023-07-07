@@ -18,7 +18,8 @@ WITH
     a.ATTRIBUTE9 AS category,
     ORGANIZATION_CODE
   FROM
-    `cg-gbq-p.oracle_nets.item_master` a
+   -- `cg-gbq-p.oracle_nets.item_master` a
+    {{ ref('cg_item_master') }} a
   CROSS JOIN (
     SELECT
       SUBSTR(CAST(DATE(date_key) AS string),0,7) AS date_key
@@ -57,7 +58,8 @@ WITH
     COALESCE(standard_cost,0)standard_cost,
     status,
     category,
-    COALESCE(QOH,0) AS oracle_inventory
+    COALESCE(QOH,0) AS oracle_inventory,
+    COALESCE(dependent_demand,0)dependent_demand
   FROM
     date_item_cte a
   LEFT JOIN (
@@ -67,7 +69,7 @@ WITH
       SUBSTR(CAST(inv_date AS string),0,7) AS yyyy_mm,
       sum(quantity) AS invoiced_sales_units,
     FROM
-     -- `cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
+     --`cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
         {{ ref('cg_invoice_final_fact') }} a
     WHERE
       DATE(inv_date)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
@@ -112,7 +114,7 @@ WITH
       MAX(QOH)QOH,
       SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
     FROM
-      --`cg-gbq-p.oracle_nets.inventory_on_hand` a
+     -- `cg-gbq-p.oracle_nets.inventory_on_hand` a
       {{ ref('cg_inventory_on_hand') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_date_dimension` b
@@ -131,10 +133,33 @@ WITH
   ON
     a.date_key = d.yyyy_mm
     AND CAST(a.item_inven_id AS int64) = d.inventory_item_id
-    AND a.ORGANIZATION_CODE = d.ORGANIZATION_CODE )
+    AND a.ORGANIZATION_CODE = d.ORGANIZATION_CODE
+    left join (SELECT
+      ORGANIZATION_CODE,
+      COMPONENT,
+      sum(dependent_demand)DEPENDENT_DEMAND,
+      SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
+    FROM
+    --  `cg-gbq-p.oracle_nets.v_Dependent_Demand` a
+      {{ ref('cg_dependent_demand') }} a
+    LEFT JOIN
+      `cg-gbq-p.consumption_zone.cg_date_dimension` b
+    ON
+      CAST(a.WEEK_num AS string) = b.week_in_year
+      AND A.YEAR = b.year_number
+      AND DATE(date_key)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
+              FROM
+                DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
+      AND DATE(date_key) <= current_date
+    GROUP BY
+      1,
+      2,
+      4) e  
 
-    -- select * from forcast_fact_joined_cte
-    -- where item_inven_id = 100000000458119
+ ON
+    a.date_key = e.yyyy_mm
+    AND a.sku = e.COMPONENT
+    AND a.ORGANIZATION_CODE = e.ORGANIZATION_CODE)
 
 
 SELECT
@@ -151,7 +176,8 @@ SELECT
   SUM(invoiced_sales_units)invoiced_sales_units,
   SUM(fg_forcast_Sales)fg_forcast_Sales,
   SUM(qty_forcast)qty_forcast,
-  SUM(standard_cost)standard_cost
+  SUM(standard_cost)standard_cost,
+  SUM(dependent_demand)dependent_demand
 FROM
   forcast_fact_joined_cte 
 GROUP BY
