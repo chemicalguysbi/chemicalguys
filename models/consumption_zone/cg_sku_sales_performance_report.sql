@@ -1,10 +1,9 @@
 {{
-       config(
-             materialized='view',
-             tags = 'cg_sku_sales_performance_report',
-         )
+       config(
+             materialized='view',
+             tags = 'cg_sku_sales_performance_report',
+         )
 }}
-
 
 WITH
   date_item_cte AS (
@@ -18,7 +17,7 @@ WITH
     a.ATTRIBUTE9 AS category,
     ORGANIZATION_CODE
   FROM
-   -- `cg-gbq-p.oracle_nets.item_master` a
+    --`cg-gbq-p.oracle_nets.item_master` a
     {{ ref('cg_item_master') }} a
   CROSS JOIN (
     SELECT
@@ -59,7 +58,8 @@ WITH
     status,
     category,
     COALESCE(QOH,0) AS oracle_inventory,
-    COALESCE(dependent_demand,0)dependent_demand
+    COALESCE(dependent_demand,0)dependent_demand,
+    start_date_of_month
   FROM
     date_item_cte a
   LEFT JOIN (
@@ -89,7 +89,7 @@ WITH
       SUBSTR(CAST(DATE(USING_ASSEMBLY_DEMAND_DATE) AS string),0,7) yyyy_mm,
       COUNT(a.item_number)qty
     FROM
-      --`cg-gbq-p.oracle_nets.demand_forecast` a 
+     -- `cg-gbq-p.oracle_nets.demand_forecast` a 
        {{ ref('cg_demand_forcast') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_product_dimension` b
@@ -135,26 +135,34 @@ WITH
     AND CAST(a.item_inven_id AS int64) = d.inventory_item_id
     AND a.ORGANIZATION_CODE = d.ORGANIZATION_CODE
     left join (SELECT
-      ORGANIZATION_CODE,
-      COMPONENT,
-      sum(dependent_demand)DEPENDENT_DEMAND,
-      SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
-    FROM
-    --  `cg-gbq-p.oracle_nets.v_Dependent_Demand` a
-      {{ ref('cg_dependent_demand') }} a
-    LEFT JOIN
-      `cg-gbq-p.consumption_zone.cg_date_dimension` b
-    ON
-      CAST(a.WEEK_num AS string) = b.week_in_year
-      AND A.YEAR = b.year_number
-      AND DATE(date_key)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
-              FROM
-                DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
-      AND DATE(date_key) <= current_date
-    GROUP BY
-      1,
-      2,
-      4) e  
+  ORGANIZATION_CODE,
+  COMPONENT,
+  sum((cnt*dependent_demand)/7) as DEPENDENT_DEMAND,
+  concat(year_number,'-',month_number) as yyyy_mm,
+  concat(year_number,'-','0',month_number,'-','01')  as start_date_of_month
+FROM
+   --`cg-gbq-p.oracle_nets.v_Dependent_Demand` a
+   {{ ref('cg_dependent_demand') }} a
+LEFT JOIN
+(SELECT
+    COUNT(*) CNT,
+    month_number,
+    CAST(week_in_year AS int64) AS week_in_year,
+    year_number
+  FROM
+    `cg-gbq-p.consumption_zone.cg_date_dimension`
+  GROUP BY
+    2,
+    3,
+    4 )b
+ON
+  a.WEEK_num = b.week_in_year
+  AND A.YEAR = b.year_number
+ -- where CAST(a.WEEK_num AS string) ='31' and COMPONENT='CLD_998_16' and ORGANIZATION_CODE ='DSV_GEORGIA'
+GROUP BY
+  1,
+  2,
+  4,5) e  
 
  ON
     a.date_key = e.yyyy_mm
@@ -171,6 +179,7 @@ SELECT
   ORGANIZATION_CODE as organization_code,
   SUM(oracle_inventory)oracle_inventory,
   date_key,
+  start_date_of_month,
   SUM(inv_amount)inv_amount,
   SUM(avg_invoice_price)avg_invoice_price,
   SUM(invoiced_sales_units)invoiced_sales_units,
@@ -180,10 +189,11 @@ SELECT
   SUM(dependent_demand)dependent_demand
 FROM
   forcast_fact_joined_cte 
+ --where  SKU='CLD_998_16' --and ORGANIZATION_CODE ='CUSTOM_GOODS_CA'
 GROUP BY
   1,
   2,
   3,
   4,
   5,
-  6,8
+  6,8,9
