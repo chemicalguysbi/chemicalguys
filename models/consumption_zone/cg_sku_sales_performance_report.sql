@@ -9,6 +9,7 @@ WITH
   date_item_cte AS (
   SELECT
     DISTINCT date_key,
+
     SKU,
     DESCRIPTION,
     a.INVENTORY_ITEM_ID AS item_inven_id,
@@ -68,20 +69,27 @@ WITH
       a.inventory_item_id,
       SUBSTR(CAST(inv_date AS string),0,7) AS yyyy_mm,
       sum(quantity) AS invoiced_sales_units,
+      sc.organization_code,
     FROM
-     --`cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
+    -- `cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
         {{ ref('cg_invoice_final_fact') }} a
+      left join 
+      --`cg-gbq-p.staging_zone.standard_cost` sc
+      {{ ref('standard_cost') }} sc
+        on a.ORGANIZATIOn_id = sc.organization_id
+      and a.inventory_item_id = sc.inventory_item_id
     WHERE
       DATE(inv_date)>= DATE(CONCAT(CAST(CAST(EXTRACT(YEAR
               FROM
                 DATE (current_date)) AS int64)-2 AS string),SUBSTR(CAST(current_date AS string),5)))
       AND DATE(inv_date) <= current_date
-    GROUP BY
+     
+           GROUP BY
       SUBSTR(CAST(inv_date AS string),0,7),
-      inventory_item_id)b
+      a.inventory_item_id,sc.organization_code)b
   ON
     a.date_key = b.yyyy_mm
-    AND CAST(a.item_inven_id AS int64) = b.inventory_item_id
+    AND CAST(a.item_inven_id AS int64) = b.inventory_item_id and a.ORGANIZATION_CODE = b.organization_code
   LEFT JOIN (
     SELECT
       SUM(a.USING_REQ_QTY)AS fg_forcast_Sales,
@@ -89,8 +97,8 @@ WITH
       SUBSTR(CAST(DATE(USING_ASSEMBLY_DEMAND_DATE) AS string),0,7) yyyy_mm,
       COUNT(a.item_number)qty
     FROM
-     -- `cg-gbq-p.oracle_nets.demand_forecast` a 
-       {{ ref('cg_demand_forcast') }} a
+      --`cg-gbq-p.oracle_nets.demand_forecast` a 
+      {{ ref('cg_demand_forcast') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_product_dimension` b
     ON
@@ -114,8 +122,8 @@ WITH
       MAX(QOH)QOH,
       SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
     FROM
-     -- `cg-gbq-p.oracle_nets.inventory_on_hand` a
-      {{ ref('cg_inventory_on_hand') }} a
+      --`cg-gbq-p.oracle_nets.inventory_on_hand` a
+     {{ ref('cg_inventory_on_hand') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_date_dimension` b
     ON
