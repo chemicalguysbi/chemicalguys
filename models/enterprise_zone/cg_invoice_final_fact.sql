@@ -25,7 +25,8 @@ WITH
     _fivetran_synced
 
   FROM
-    {{ ref('invoice_transaction_header') }}
+--`cg-gbq-p.staging_zone.invoice_transaction_header`
+   {{ ref('invoice_transaction_header') }}
     WHERE
     UPPER(ra_customer_trx_trx_class)='INV' 
     ),
@@ -35,8 +36,10 @@ WITH
     ra_customer_trx_line_extended_amount, 
     ra_customer_trx_line_inventory_item_id AS INVENTORY_ITEM_ID,
     _fivetran_synced,
-    ra_customer_trx_line_quantity_invoiced as quantity
+    ra_customer_trx_line_quantity_invoiced as quantity,
+    ra_customer_trx_line_warehouse_id as organization_id
   FROM
+--`cg-gbq-p.staging_zone.invoice_transaction_line`
      {{ ref('invoice_transaction_line') }} 
     
     ),
@@ -46,6 +49,7 @@ WITH
     account_name AS ACCOUNT_NAME,
     _fivetran_synced
   FROM
+  --`cg-gbq-p.staging_zone.customer_account_master`
    {{ ref('customer_account_master') }}
     
     ),
@@ -57,6 +61,7 @@ WITH
     _fivetran_synced
 
   FROM
+ --`cg-gbq-p.staging_zone.invoice_legal_entity`
      {{ ref('invoice_legal_entity') }}
     
     ),
@@ -77,7 +82,8 @@ WITH
   inv_number,
   COALESCE(inventory_item_id,0)inventory_item_id,
   0 as open_balance,
-  quantity
+  quantity,
+  organization_id
   FROM
     invo_trans_hdr ith
   INNER JOIN
@@ -112,7 +118,8 @@ SELECT
   inv_number,
   inventory_item_id,
   open_balance,
-  quantity
+  quantity,
+  organization_id
 FROM
   JOIN_CTE
 
@@ -129,13 +136,13 @@ GROUP BY
  inv_number,
   inventory_item_id,
   open_balance,
-  quantity
+  quantity,
+  organization_id
 ORDER BY
   inv_date,
   account_name,
-  inv_number ASC
-  )
-select 
+  inv_number ASC)
+  select 
 md5(account_name ||cust_account_id ||complete_flag||source_order_number||order_number||invoice_currency_code||purchase_order||
- trx_class ||inv_date||inv_number|| inventory_item_id ||open_balance)s_key,
+ trx_class ||inv_date||inv_number|| inventory_item_id ||open_balance||organization_id)s_key,
  * ,current_datetime as load_datetime from final_cte
