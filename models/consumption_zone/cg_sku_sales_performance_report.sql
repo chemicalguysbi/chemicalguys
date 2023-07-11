@@ -147,14 +147,14 @@ WITH
   COMPONENT,
   sum((cnt*dependent_demand)/7) as DEPENDENT_DEMAND,
   concat(year_number,'-',month_number) as yyyy_mm,
-  concat(year_number,'-','0',month_number,'-','01')  as start_date_of_month
+  concat(year_number,'-',month_number,'-','01')  as start_date_of_month
 FROM
    --`cg-gbq-p.oracle_nets.v_Dependent_Demand` a
    {{ ref('cg_dependent_demand') }} a
 LEFT JOIN
 (SELECT
     COUNT(*) CNT,
-    month_number,
+    case when length(cast(month_number as string))=1 then concat('0',cast(month_number as string)) else cast(month_number as string) end as month_number,
     CAST(week_in_year AS int64) AS week_in_year,
     year_number
   FROM
