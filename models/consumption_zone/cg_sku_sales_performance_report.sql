@@ -9,7 +9,7 @@ WITH
   date_item_cte AS (
   SELECT
     DISTINCT date_key,
-
+    parent_sku,
     SKU,
     DESCRIPTION,
     a.INVENTORY_ITEM_ID AS item_inven_id,
@@ -18,7 +18,7 @@ WITH
     a.ATTRIBUTE9 AS category,
     ORGANIZATION_CODE
   FROM
-    --`cg-gbq-p.oracle_nets.item_master` a
+    --`cg-gbq-p.staging_zone.cg_item_master` a
     {{ ref('cg_item_master') }} a
   CROSS JOIN (
     SELECT
@@ -35,14 +35,14 @@ WITH
   GROUP BY
     1,
     2,
-    4,
+    4,5,
     3,
-    6,
     7,
-    8 ),
+    8 ,9),
   forcast_fact_joined_cte AS (
   SELECT
     a.date_key,
+    parent_sku,
     COALESCE(inv_amount,0)inv_amount,
     COALESCE(inv_amount/coalesce (b.invoiced_sales_units,
         0),0) AS avg_invoice_price,
@@ -71,10 +71,10 @@ WITH
       sum(quantity) AS invoiced_sales_units,
       sc.organization_code,
     FROM
-    -- `cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
+     --`cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
         {{ ref('cg_invoice_final_fact') }} a
       left join 
-      --`cg-gbq-p.staging_zone.standard_cost` sc
+    --  `cg-gbq-p.staging_zone.standard_cost` sc
       {{ ref('standard_cost') }} sc
         on a.ORGANIZATIOn_id = sc.organization_id
       and a.inventory_item_id = sc.inventory_item_id
@@ -179,6 +179,7 @@ GROUP BY
 
 
 SELECT
+  parent_sku,
   sku,
   description,
   item_inven_id,
@@ -204,4 +205,4 @@ GROUP BY
   3,
   4,
   5,
-  6,8,9
+  6,7,9,10
