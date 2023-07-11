@@ -60,7 +60,7 @@ WITH
     category,
     COALESCE(QOH,0) AS oracle_inventory,
     COALESCE(dependent_demand,0)dependent_demand,
-    start_date_of_month
+    concat(a.date_key,'-','01') start_date_of_month
   FROM
     date_item_cte a
   LEFT JOIN (
