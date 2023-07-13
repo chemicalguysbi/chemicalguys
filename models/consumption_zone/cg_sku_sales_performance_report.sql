@@ -5,6 +5,10 @@
          )
 }}
 
+
+
+
+
 WITH
   date_item_cte AS (
   SELECT
@@ -60,7 +64,8 @@ WITH
     category,
     COALESCE(QOH,0) AS oracle_inventory,
     COALESCE(dependent_demand,0)dependent_demand,
-    concat(a.date_key,'-','01') start_date_of_month
+    concat(a.date_key,'-','01') start_date_of_month,
+    account_name
   FROM
     date_item_cte a
   LEFT JOIN (
@@ -70,11 +75,12 @@ WITH
       SUBSTR(CAST(inv_date AS string),0,7) AS yyyy_mm,
       sum(quantity) AS invoiced_sales_units,
       sc.organization_code,
+      a.account_name
     FROM
      --`cg-gbq-p.enterprise_zone.cg_invoice_final_fact` a
-        {{ ref('cg_invoice_final_fact') }} a
+       {{ ref('cg_invoice_final_fact') }} a
       left join 
-    --  `cg-gbq-p.staging_zone.standard_cost` sc
+      --`cg-gbq-p.staging_zone.standard_cost` sc
       {{ ref('standard_cost') }} sc
         on a.ORGANIZATIOn_id = sc.organization_id
       and a.inventory_item_id = sc.inventory_item_id
@@ -86,7 +92,7 @@ WITH
      
            GROUP BY
       SUBSTR(CAST(inv_date AS string),0,7),
-      a.inventory_item_id,sc.organization_code)b
+      a.inventory_item_id,sc.organization_code,a.account_name)b
   ON
     a.date_key = b.yyyy_mm
     AND CAST(a.item_inven_id AS int64) = b.inventory_item_id and a.ORGANIZATION_CODE = b.organization_code
@@ -123,7 +129,7 @@ WITH
       SUBSTR(CAST(DATE(date_key) AS string),0,7) AS yyyy_mm
     FROM
       --`cg-gbq-p.oracle_nets.inventory_on_hand` a
-     {{ ref('cg_inventory_on_hand') }} a
+    {{ ref('cg_inventory_on_hand') }} a
     LEFT JOIN
       `cg-gbq-p.consumption_zone.cg_date_dimension` b
     ON
@@ -149,7 +155,7 @@ WITH
   concat(year_number,'-',month_number) as yyyy_mm,
   concat(year_number,'-',month_number,'-','01')  as start_date_of_month
 FROM
-   --`cg-gbq-p.oracle_nets.v_Dependent_Demand` a
+  -- `cg-gbq-p.oracle_nets.v_Dependent_Demand` a
    {{ ref('cg_dependent_demand') }} a
 LEFT JOIN
 (SELECT
@@ -189,6 +195,7 @@ SELECT
   SUM(oracle_inventory)oracle_inventory,
   date_key,
   start_date_of_month,
+  account_name,
   SUM(inv_amount)inv_amount,
   SUM(avg_invoice_price)avg_invoice_price,
   SUM(invoiced_sales_units)invoiced_sales_units,
@@ -205,4 +212,4 @@ GROUP BY
   3,
   4,
   5,
-  6,7,9,10
+  6,7,9,10,11
