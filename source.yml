@@ -15,6 +15,7 @@ sources:
       - name: sales_orders_location
       - name: sales_orders_order_address
       - name: sales_orders_party_site
+      - name: cg_v_sales_l3y
 
   - name: enterprise_zone
     tables:

@@ -17,7 +17,8 @@ WITH
     SUM(qty) qty,
     SUM(amt) amt,
   FROM
-    cg-gbq-p.lightspeed.v_Sales_L3Y
+   -- cg-gbq-p.lightspeed.v_Sales_L3Y
+   {{ ref('cg_v_sales_l3y') }}
   WHERE
     StoreType = 'Brand'
   GROUP BY

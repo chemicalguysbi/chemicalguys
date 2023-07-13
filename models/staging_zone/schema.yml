@@ -21,3 +21,4 @@ models:
     - name: cg_inventory_on_hand
     - name: cg_dependent_demand
     - name: cg_item_master
+    - name: cg_v_sales_l3y
